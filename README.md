@@ -1,5 +1,4 @@
-# kasir Toko
-## Nama Anggota Kelompok
+# Nama Anggota Kelompok
 
 |      Nama              |NIM        
 | :----------------------|:-------------:
@@ -7,4 +6,4 @@
 | Rafiq Napriyanto       | 23.11.5383 
 | Hafidz Ar Rofi         | 23.11.5400 
 | Sholikhan Khoirun Akmal| 23.11.5413  
-| Muhammad Ridho Pambudi | 23.11.5382 
+| Muhammad Ridho Pambudi | 23.11.5382

@@ -1,1 +1,0 @@
-cek cek for corat coret
