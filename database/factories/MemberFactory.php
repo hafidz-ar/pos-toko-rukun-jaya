@@ -2,15 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<Member>
  */
-class UserFactory extends Factory
+class MemberFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -21,8 +19,6 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'role' => 'cashier',
-            'pin' => '1234', // Default PIN for testing
         ];
     }
 }
