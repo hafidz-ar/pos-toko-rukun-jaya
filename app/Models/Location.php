@@ -22,11 +22,11 @@ class Location extends Model
     ];
 
     /**
-     * The name of the "updated at" column.
+     * Indicates if the model should be timestamped.
      *
-     * @var string|null
+     * @var bool
      */
-    const UPDATED_AT = null;
+    public $timestamps = false;
 
     /**
      * Get the product variants located at this location.

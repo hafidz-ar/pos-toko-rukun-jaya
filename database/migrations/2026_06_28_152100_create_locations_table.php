@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('locations', function (Blueprint $table) {
-            $table->id();
+            $table->increments('id');
             $table->string('location_name', 100);
             $table->text('description')->nullable();
-            $table->timestamp('created_at')->useCurrent();
         });
     }
 
