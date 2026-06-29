@@ -4,6 +4,131 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+  --color-on-background: #191c1e;
+  --color-surface-bright: #f7f9fb;
+  --color-tertiary-container: #0098f3;
+  --color-surface: #f7f9fb;
+  --color-on-primary-fixed: #341100;
+  --color-surface-tint: #9e4300;
+  --color-primary-container: #ee6c12;
+  --color-error: #ba1a1a;
+  --color-on-secondary-fixed-variant: #3c475a;
+  --color-on-error: #ffffff;
+  --color-surface-container-high: #e6e8ea;
+  --color-on-primary-fixed-variant: #783100;
+  --color-surface-container-lowest: #ffffff;
+  --color-outline: #8c7165;
+  --color-on-surface: #191c1e;
+  --color-primary-fixed-dim: #ffb691;
+  --color-error-container: #ffdad6;
+  --color-tertiary: #00629f;
+  --color-inverse-on-surface: #eff1f3;
+  --color-on-secondary-container: #586377;
+  --color-on-surface-variant: #584237;
+  --color-inverse-primary: #ffb691;
+  --color-tertiary-fixed: #d0e4ff;
+  --color-on-primary: #ffffff;
+  --color-inverse-surface: #2d3133;
+  --color-on-tertiary-container: #002d4e;
+  --color-background: #f7f9fb;
+  --color-primary-fixed: #ffdbcb;
+  --color-on-tertiary-fixed: #001d34;
+  --color-secondary-fixed-dim: #bcc7de;
+  --color-tertiary-fixed-dim: #9bcbff;
+  --color-on-tertiary: #ffffff;
+  --color-surface-variant: #e0e3e5;
+  --color-primary: #9e4300;
+  --color-secondary: #545f73;
+  --color-surface-container-highest: #e0e3e5;
+  --color-on-tertiary-fixed-variant: #004a79;
+  --color-surface-container: #eceef0;
+  --color-secondary-fixed: #d8e3fb;
+  --color-on-error-container: #93000a;
+  --color-surface-container-low: #f2f4f6;
+  --color-secondary-container: #d5e0f8;
+  --color-on-secondary-fixed: #111c2d;
+  --color-on-primary-container: #4d1d00;
+  --color-outline-variant: #e0c0b1;
+  --color-on-secondary: #ffffff;
+  --color-surface-dim: #d8dadc;
+
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+
+  --spacing-margin-mobile: 16px;
+  --spacing-gutter: 24px;
+  --spacing-base: 8px;
+  --spacing-margin-desktop: 32px;
+  --spacing-touch-target-min: 48px;
+
+  --font-headline-lg: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-body-md: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-label-xl: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-body-lg: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-headline-lg-mobile: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-headline-md: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display-price: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-label-md: Inter, ui-sans-serif, system-ui, sans-serif;
+  
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--font-weight: 700;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+
+  --text-label-xl: 20px;
+  --text-label-xl--line-height: 24px;
+  --text-label-xl--font-weight: 600;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+
+  --text-headline-lg-mobile: 28px;
+  --text-headline-lg-mobile--line-height: 36px;
+  --text-headline-lg-mobile--font-weight: 700;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+
+  --text-display-price: 48px;
+  --text-display-price--line-height: 56px;
+  --text-display-price--letter-spacing: -0.02em;
+  --text-display-price--font-weight: 700;
+
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 600;
+}
+
+@layer utilities {
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    
+    /* Tactical press effect from Style Guidance */
+    .btn-active:active {
+        transform: translateY(1px);
+    }
+
+    /* Industrial Grid Pattern Overlay */
+    .bg-industrial {
+        background-color: var(--color-surface-bright);
+        background-image: radial-gradient(var(--color-outline-variant) 0.5px, transparent 0.5px);
+        background-size: 24px 24px;
+    }
+
+    /* Input specific industrial styling */
+    .input-industrial:focus {
+        outline: none;
+        border-color: var(--color-surface-tint);
+        box-shadow: 0 0 0 1px var(--color-surface-tint);
+    }
 }
