@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 
 const showPassword = ref(false);
 
@@ -22,6 +22,7 @@ const handleLogin = () => {
     setTimeout(() => {
         form.processing = false;
         console.log("Authentication successful for ID:", form.username);
+        router.visit('/dashboard');
     }, 1200);
 };
 </script>
