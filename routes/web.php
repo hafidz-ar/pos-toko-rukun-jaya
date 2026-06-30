@@ -15,3 +15,7 @@ Route::get('/inventory', function () {
     return Inertia::render('Inventory');
 })->name('inventory');
 
+Route::get('/kasir', function () {
+    return Inertia::render('Auth/Kasir');
+})->name('kasir');
+
