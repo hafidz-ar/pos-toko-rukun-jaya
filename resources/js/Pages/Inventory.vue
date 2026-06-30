@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
@@ -20,57 +20,129 @@ const openEditModal = () => {
 const closeEditModal = () => {
     isEditModalOpen.value = false;
 };
+
+// Toast state
+const toastMessage = ref('');
+const showToast = ref(false);
+let toastTimeout = null;
+
+const triggerToast = (message) => {
+    toastMessage.value = message;
+    showToast.value = true;
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        showToast.value = false;
+    }, 3000);
+};
+
+// Logout handler
+const handleLogout = () => {
+    triggerToast('Keluar dari sistem...');
+    setTimeout(() => {
+        router.visit('/');
+    }, 800);
+};
+
+// Navigation menu helpers
+const handleNavAction = (menuName) => {
+    triggerToast(`Menu ${menuName} sedang dalam pengembangan.`);
+};
 </script>
 
 <template>
     <Head title="Toko Material POS - Daftar Inventori" />
 
-    <div class="flex h-screen overflow-hidden">
+    <div class="fixed inset-0 bg-background text-on-background flex flex-col md:flex-row overflow-hidden w-full h-full font-sans">
+        
+        <!-- Toast Notification -->
+        <Transition
+            enter-active-class="transform ease-out duration-300 transition"
+            enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+            enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+            leave-active-class="transition ease-in duration-200"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="showToast" class="fixed top-4 right-4 z-50 max-w-sm bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded border border-outline flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary-fixed">info</span>
+                <span class="text-sm font-semibold">{{ toastMessage }}</span>
+            </div>
+        </Transition>
+
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0">
-            <div class="flex items-center px-2 py-4 mb-4">
-                <span class="text-headline-md font-headline-md font-bold text-primary">Toko Material</span>
+            <div class="px-4 py-6">
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
             </div>
             
-            <div class="space-y-4">
-                <div class="px-2">
-                    <p class="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Main Menu</p>
-                    <nav class="space-y-1">
-                        <Link href="/dashboard" class="flex items-center gap-3 px-3 py-3 text-secondary hover:bg-surface-container-high transition-colors text-label-md font-label-md">
-                            <span class="material-symbols-outlined">dashboard</span> Dashboard
-                        </Link>
-                        <Link href="/inventory" class="flex items-center gap-3 px-3 py-3 bg-secondary-container text-on-secondary-container font-bold rounded-lg text-label-md font-label-md">
-                            <span class="material-symbols-outlined">inventory_2</span> Inventory
-                        </Link>
-                        <a href="#" class="flex items-center gap-3 px-3 py-3 text-secondary hover:bg-surface-container-high transition-colors text-label-md font-label-md">
-                            <span class="material-symbols-outlined">point_of_sale</span> Sales
-                        </a>
-                        <a href="#" class="flex items-center gap-3 px-3 py-3 text-secondary hover:bg-surface-container-high transition-colors text-label-md font-label-md">
-                            <span class="material-symbols-outlined">analytics</span> Reports
-                        </a>
-                        <a href="#" class="flex items-center gap-3 px-3 py-3 text-secondary hover:bg-surface-container-high transition-colors text-label-md font-label-md">
-                            <span class="material-symbols-outlined">settings</span> Settings
-                        </a>
-                    </nav>
-                </div>
-                
-                <div class="px-2 mt-auto">
-                    <button class="w-full flex items-center justify-center gap-2 bg-primary-container text-white font-bold py-4 rounded-lg active:scale-95 transition-transform">
-                        <span class="material-symbols-outlined">add</span> New Transaction
+            <div class="flex flex-col gap-1 flex-1">
+                <!-- Dashboard Tab -->
+                <Link 
+                    href="/dashboard"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </Link>
+
+                <!-- Inventory Tab (Active) -->
+                <Link 
+                    href="/inventory"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span>Inventory</span>
+                </Link>
+
+                <!-- Sales Tab -->
+                <button 
+                    @click="handleNavAction('Sales')"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">point_of_sale</span>
+                    <span>Sales</span>
+                </button>
+
+                <!-- Reports Tab -->
+                <button 
+                    @click="handleNavAction('Reports')"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Reports</span>
+                </button>
+
+                <!-- Settings Tab -->
+                <button 
+                    @click="handleNavAction('Settings')"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">settings</span>
+                    <span>Settings</span>
+                </button>
+            </div>
+
+            <!-- Profile & New Transaction Area -->
+            <div class="mt-auto border-t border-outline-variant pt-4 pb-2 px-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
+                        <div>
+                            <p class="text-label-md font-label-md leading-none">Admin Staff</p>
+                            <p class="text-xs text-secondary mt-1">Main Warehouse</p>
+                        </div>
+                    </div>
+                    <!-- Logout button on desktop -->
+                    <button @click="handleLogout" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Keluar dari sistem">
+                        logout
                     </button>
                 </div>
-            </div>
-            
-            <div class="mt-auto p-4 border-t border-outline-variant">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white">
-                        <span class="material-symbols-outlined">account_circle</span>
-                    </div>
-                    <div>
-                        <p class="text-label-md font-label-md">Admin Staff</p>
-                        <p class="text-[10px] text-secondary">Main Warehouse</p>
-                    </div>
-                </div>
+                <button 
+                    @click="triggerToast('Membuka kasir untuk transaksi baru...')" 
+                    class="w-full bg-primary text-on-primary font-bold min-h-[48px] rounded hover:brightness-90 active:translate-y-[1px] transition-all cursor-pointer"
+                >
+                    New Transaction
+                </button>
             </div>
         </aside>
 
@@ -108,7 +180,7 @@ const closeEditModal = () => {
                         </button>
                     </div>
                     
-                    <button class="bg-[#ee6c12] text-white px-6 py-3 font-bold flex items-center gap-2 min-h-[56px] hover:brightness-110 active:translate-y-px transition-all" @click="openAddItemModal">
+                    <button class="bg-[#ee6c12] text-white px-6 py-3 font-bold flex items-center gap-2 min-h-[48px] hover:brightness-110 active:translate-y-px transition-all" @click="openAddItemModal">
                         <span class="material-symbols-outlined">add_box</span> Tambah Barang
                     </button>
                 </div>
@@ -466,21 +538,33 @@ const closeEditModal = () => {
 
     <!-- BOTTOM NAV (Mobile Only) -->
     <nav class="fixed bottom-0 left-0 w-full bg-surface border-t-2 border-outline-variant flex justify-around items-center h-16 px-4 md:hidden z-50">
-        <Link href="/dashboard" class="flex flex-col items-center justify-center text-secondary">
+        <Link 
+            href="/dashboard" 
+            class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 text-secondary transition-all active:translate-y-[1px]"
+        >
             <span class="material-symbols-outlined">home</span>
-            <span class="text-[10px] font-bold">Home</span>
+            <span class="text-[10px] font-semibold">Home</span>
         </Link>
-        <Link href="/inventory" class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1">
+        <Link 
+            href="/inventory" 
+            class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 bg-primary text-on-primary font-bold transition-all active:translate-y-[1px]"
+        >
             <span class="material-symbols-outlined">apps</span>
-            <span class="text-[10px] font-bold">Inventory</span>
+            <span class="text-[10px] font-semibold">Inventory</span>
         </Link>
-        <button class="flex flex-col items-center justify-center text-secondary">
+        <button 
+            @click="triggerToast('Membuka kasir untuk transaksi baru...')"
+            class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 text-secondary active:translate-y-[1px] transition-all duration-200"
+        >
             <span class="material-symbols-outlined">add_shopping_cart</span>
-            <span class="text-[10px] font-bold">POS</span>
+            <span class="text-[10px] font-semibold">POS</span>
         </button>
-        <button class="flex flex-col items-center justify-center text-secondary">
+        <button 
+            @click="triggerToast('Menu Reports sedang dalam pengembangan.')"
+            class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 text-secondary active:translate-y-[1px] transition-all duration-200"
+        >
             <span class="material-symbols-outlined">assessment</span>
-            <span class="text-[10px] font-bold">Reports</span>
+            <span class="text-[10px] font-semibold">Reports</span>
         </button>
     </nav>
 </template>
