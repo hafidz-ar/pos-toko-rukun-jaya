@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 
 const showConfirmationModal = ref(false);
 const showReceiptModal = ref(false);
+const selectedPaymentMethod = ref('Cash');
 
 const openConfirmation = () => {
     showConfirmationModal.value = true;
@@ -184,10 +185,16 @@ onUnmounted(() => {
                         <div class="mt-4 space-y-2">
                             <p class="text-xs font-bold text-outline uppercase tracking-tighter">Metode Pembayaran</p>
                             <div class="flex gap-2">
-                                <button class="flex-1 py-2 border-2 border-primary bg-primary-container text-on-primary-container rounded font-bold text-sm flex items-center justify-center gap-1 active:translate-y-[1px] transition-transform">
+                                <button 
+                                    @click="selectedPaymentMethod = 'Cash'"
+                                    :class="selectedPaymentMethod === 'Cash' ? 'border-2 border-primary bg-primary-container text-on-primary-container' : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
+                                    class="flex-1 py-2 rounded font-bold text-sm flex items-center justify-center gap-1 active:translate-y-[1px] transition-all">
                                     <span class="material-symbols-outlined text-sm">payments</span> Cash
                                 </button>
-                                <button class="flex-1 py-2 border border-outline-variant bg-surface-container-low text-on-surface-variant rounded font-bold text-sm flex items-center justify-center gap-1 hover:bg-surface-container-high transition-colors active:translate-y-[1px]">
+                                <button 
+                                    @click="selectedPaymentMethod = 'QRIS'"
+                                    :class="selectedPaymentMethod === 'QRIS' ? 'border-2 border-primary bg-primary-container text-on-primary-container' : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
+                                    class="flex-1 py-2 rounded font-bold text-sm flex items-center justify-center gap-1 active:translate-y-[1px] transition-all">
                                     <span class="material-symbols-outlined text-sm">qr_code_2</span> QRIS
                                 </button>
                             </div>
@@ -227,8 +234,8 @@ onUnmounted(() => {
                             </div>
                         </div>
                         <div class="p-3 bg-surface-container-low rounded border border-outline-variant flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">payments</span>
-                            <span class="text-label-md text-on-surface">Metode: <span class="font-bold">Cash</span></span>
+                            <span class="material-symbols-outlined text-primary">{{ selectedPaymentMethod === 'Cash' ? 'payments' : 'qr_code_2' }}</span>
+                            <span class="text-label-md text-on-surface">Metode: <span class="font-bold">{{ selectedPaymentMethod }}</span></span>
                         </div>
                         <div class="flex gap-3 pt-2">
                             <button class="flex-1 h-12 border border-outline-variant bg-surface-container-low text-on-surface-variant rounded font-bold hover:bg-surface-container-high transition-all active:translate-y-[1px]" @click="closeConfirmation">Batal</button>
