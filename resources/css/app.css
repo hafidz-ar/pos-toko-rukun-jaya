@@ -131,4 +131,18 @@
         border-color: var(--color-surface-tint);
         box-shadow: 0 0 0 1px var(--color-surface-tint);
     }
+
+    input:focus, select:focus { 
+        border-color: #ee6c12 !important; 
+        outline: none; 
+        box-shadow: none !important; 
+    }
+
+    .scrollbar-hide::-webkit-scrollbar { 
+        display: none; 
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
 }

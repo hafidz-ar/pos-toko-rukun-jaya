@@ -50,7 +50,11 @@ const handleLogout = () => {
 const currentTab = ref('dashboard');
 const setTab = (tab) => {
     currentTab.value = tab;
-    if (tab !== 'dashboard') {
+    if (tab === 'inventory') {
+        router.visit('/inventory');
+    } else if (tab === 'dashboard') {
+        router.visit('/dashboard');
+    } else {
         triggerToast(`Menu ${tab.charAt(0).toUpperCase() + tab.slice(1)} sedang dalam pengembangan.`);
     }
 };

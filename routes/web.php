@@ -11,3 +11,7 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->name('dashboard');
 
+Route::get('/inventory', function () {
+    return Inertia::render('Inventory');
+})->name('inventory');
+
