@@ -56,7 +56,7 @@ const setTab = (tab) => {
 };
 
 const startTransaction = () => {
-    triggerToast('Membuka kasir untuk transaksi baru...');
+    router.visit('/kasir');
 };
 
 const checkStock = () => {

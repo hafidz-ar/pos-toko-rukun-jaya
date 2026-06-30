@@ -11,3 +11,7 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->name('dashboard');
 
+Route::get('/kasir', function () {
+    return Inertia::render('Auth/Kasir');
+})->name('kasir');
+
