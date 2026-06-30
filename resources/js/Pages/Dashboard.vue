@@ -66,7 +66,7 @@ const startTransaction = () => {
 };
 
 const checkStock = () => {
-    triggerToast('Membuka menu Cek Stok...');
+    router.visit('/inventory');
 };
 
 const openOwnerMenu = (menuName) => {
