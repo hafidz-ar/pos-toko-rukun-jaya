@@ -11,9 +11,9 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->name('dashboard');
 
-Route::get('/inventory', function () {
-    return Inertia::render('Inventory');
-})->name('inventory');
+Route::get('/inventaris', function () {
+    return Inertia::render('Inventaris');
+})->name('inventaris');
 
 Route::get('/kasir', function () {
     return Inertia::render('Auth/Kasir');
@@ -22,4 +22,12 @@ Route::get('/kasir', function () {
 Route::get('/penjualan', function () {
     return Inertia::render('Penjualan');
 })->name('penjualan');
+
+Route::get('/pengaturan', function () {
+    return Inertia::render('Pengaturan');
+})->name('pengaturan');
+
+Route::get('/laporan', function () {
+    return Inertia::render('Laporan');
+})->name('laporan');
 

@@ -121,7 +121,7 @@ const openOwnerMenu = (menuName) => {
 
                 <!-- Inventory Tab -->
                 <Link 
-                    href="/inventory"
+                    href="/inventaris"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">inventory_2</span>
@@ -138,22 +138,22 @@ const openOwnerMenu = (menuName) => {
                 </Link>
 
                 <!-- Reports Tab -->
-                <button 
-                    @click="setTab('reports')"
+                <Link 
+                    href="/laporan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Laporan</span>
-                </button>
+                </Link>
 
                 <!-- Settings Tab -->
-                <button 
-                    @click="setTab('settings')"
+                <Link 
+                    href="/pengaturan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">settings</span>
                     <span>Pengaturan</span>
-                </button>
+                </Link>
             </div>
 
             <!-- Profile & New Transaction Area -->

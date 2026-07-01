@@ -70,7 +70,7 @@ const handleNavAction = (menuName) => {
         </Transition>
 
         <!-- SIDE NAVBAR (Desktop) -->
-        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0">
+        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
             <div class="px-4 py-6">
                 <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
             </div>
@@ -87,7 +87,7 @@ const handleNavAction = (menuName) => {
 
                 <!-- Inventory Tab (Active) -->
                 <Link 
-                    href="/inventory"
+                    href="/inventaris"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">inventory_2</span>
@@ -104,22 +104,22 @@ const handleNavAction = (menuName) => {
                 </Link>
 
                 <!-- Reports Tab -->
-                <button 
-                    @click="handleNavAction('Laporan')"
+                <Link 
+                    href="/laporan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Laporan</span>
-                </button>
+                </Link>
 
                 <!-- Settings Tab -->
-                <button 
-                    @click="handleNavAction('Pengaturan')"
+                <Link 
+                    href="/pengaturan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">settings</span>
                     <span>Pengaturan</span>
-                </button>
+                </Link>
             </div>
 
             <!-- Profile & New Transaction Area -->
@@ -534,7 +534,7 @@ const handleNavAction = (menuName) => {
             <span class="text-[10px] font-semibold">Home</span>
         </Link>
         <Link 
-            href="/inventory" 
+            href="/inventaris" 
             class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 bg-primary text-on-primary font-bold transition-all active:translate-y-[1px]"
         >
             <span class="material-symbols-outlined">apps</span>
