@@ -2,53 +2,85 @@
 
 namespace App\Models;
 
-use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
-        'description',
+        'category_id',
+        'base_unit',
+        'cost_price_per_base_unit',
+        'selling_price_per_base_unit',
+        'stock_qty_base_unit',
+        'location',
+        'photo_url',
+        'min_stock_threshold',
+        'is_active',
     ];
 
-    /**
-     * The name of the "updated at" column.
-     *
-     * @var string|null
-     */
-    const UPDATED_AT = null;
-
-    /**
-     * Get the variants for the product.
-     */
-    public function variants(): HasMany
+    protected function casts(): array
     {
-        return $this->hasMany(ProductVariant::class);
+        return [
+            'cost_price_per_base_unit' => 'decimal:2',
+            'selling_price_per_base_unit' => 'decimal:2',
+            'stock_qty_base_unit' => 'decimal:2',
+            'min_stock_threshold' => 'integer',
+            'is_active' => 'boolean',
+        ];
     }
 
     /**
-     * Get the transaction details associated with this product.
+     * Scope: only active products.
      */
-    public function transactionDetails(): HasMany
+    public function scopeActive(Builder $query): Builder
     {
-        return $this->hasMany(TransactionDetail::class);
+        return $query->where('is_active', true);
     }
 
     /**
-     * Get the stock movements associated with this product.
+     * Scope: products with stock below threshold.
      */
-    public function stockMovements(): HasMany
+    public function scopeLowStock(Builder $query): Builder
     {
-        return $this->hasMany(StockMovement::class);
+        return $query->whereColumn('stock_qty_base_unit', '<=', 'min_stock_threshold');
+    }
+
+    /**
+     * Get the product's category.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the unit jual alternatives.
+     */
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
+
+    /**
+     * Get restock history.
+     */
+    public function restocks(): HasMany
+    {
+        return $this->hasMany(Restock::class);
+    }
+
+    /**
+     * Get transaction items involving this product.
+     */
+    public function transactionItems(): HasMany
+    {
+        return $this->hasMany(TransactionItem::class);
     }
 }

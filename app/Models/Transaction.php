@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\TransactionDetail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,49 +11,42 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    public $timestamps = false;
+
     protected $fillable = [
-        'invoice_number',
-        'user_id',
-        'member_id',
-        'total_revenue',
-        'total_cost',
-        'discount_applied',
-        'status',
+        'cashier_user_id',
+        'transaction_datetime',
+        'payment_method',
+        'subtotal_before_discount',
+        'discount_amount',
+        'total_amount',
+        'created_at',
     ];
 
-    /**
-     * The name of the "updated at" column.
-     *
-     * @var string|null
-     */
-    const UPDATED_AT = null;
-
-    /**
-     * Get the user (cashier/owner) who processed the transaction.
-     */
-    public function user(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(User::class);
+        return [
+            'transaction_datetime' => 'datetime',
+            'subtotal_before_discount' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'total_amount' => 'decimal:2',
+            'created_at' => 'datetime',
+        ];
     }
 
     /**
-     * Get the member who made the purchase, if any.
+     * Get the cashier who processed this transaction.
      */
-    public function member(): BelongsTo
+    public function cashier(): BelongsTo
     {
-        return $this->belongsTo(Member::class);
+        return $this->belongsTo(User::class, 'cashier_user_id');
     }
 
     /**
-     * Get the items/details for the transaction.
+     * Get the line items.
      */
-    public function details(): HasMany
+    public function items(): HasMany
     {
-        return $this->hasMany(TransactionDetail::class);
+        return $this->hasMany(TransactionItem::class);
     }
 }

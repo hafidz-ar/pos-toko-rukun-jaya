@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('name', 255);
-            $table->text('description')->nullable();
+        Schema::create('backups', function (Blueprint $table) {
+            $table->id();
+            $table->string('filename', 255);
+            $table->string('filepath', 500);
+            $table->unsignedBigInteger('file_size')->default(0); // bytes
             $table->timestamp('created_at')->useCurrent();
         });
     }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('backups');
     }
 };

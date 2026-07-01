@@ -12,11 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->increments('id');
+            $table->id();
             $table->string('name', 100);
-            $table->enum('role', ['owner', 'cashier'])->default('cashier');
-            $table->string('pin', 255); // PIN 4-6 digit
-            $table->timestamp('created_at')->useCurrent();
+            $table->string('username', 50)->unique();
+            $table->string('password');
+            $table->enum('role', ['owner', 'karyawan'])->default('karyawan');
+            $table->string('telegram_chat_id', 100)->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
         });
     }
 
@@ -25,6 +37,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('sessions');
         Schema::dropIfExists('users');
     }
 };
