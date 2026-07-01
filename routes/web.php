@@ -19,3 +19,7 @@ Route::get('/kasir', function () {
     return Inertia::render('Auth/Kasir');
 })->name('kasir');
 
+use App\Http\Controllers\TransactionController;
+
+Route::get('/sales-history', [TransactionController::class, 'history']);
+

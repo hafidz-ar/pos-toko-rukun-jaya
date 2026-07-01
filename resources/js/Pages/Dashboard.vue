@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 // Toast state
 const toastMessage = ref('');
@@ -50,12 +50,13 @@ const handleLogout = () => {
 const currentTab = ref('dashboard');
 const setTab = (tab) => {
     currentTab.value = tab;
+
     if (tab === 'inventory') {
         router.visit('/inventory');
     } else if (tab === 'dashboard') {
         router.visit('/dashboard');
     } else if (tab === 'sales') {
-        router.visit('/kasir');
+        router.visit('/sales-history');
     } else {
         triggerToast(`Menu ${tab.charAt(0).toUpperCase() + tab.slice(1)} sedang dalam pengembangan.`);
     }
@@ -136,7 +137,7 @@ const openOwnerMenu = (menuName) => {
 
                 <!-- Sales Tab -->
                 <button 
-                    @click="setTab('sales')"
+                    @click="router.visit('/sales-history')"
                     :class="[
                         'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
                         currentTab === 'sales' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
