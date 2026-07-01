@@ -81,7 +81,7 @@ const handleLogout = () => {
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">inventory_2</span>
-                    <span>Inventory</span>
+                    <span>Inventaris</span>
                 </Link>
 
                 <!-- Sales Tab (Active) -->
@@ -90,7 +90,7 @@ const handleLogout = () => {
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">point_of_sale</span>
-                    <span>Sales</span>
+                    <span>Penjualan</span>
                 </Link>
 
                 <!-- Reports Tab -->
@@ -99,7 +99,7 @@ const handleLogout = () => {
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">analytics</span>
-                    <span>Reports</span>
+                    <span>Laporan</span>
                 </button>
 
                 <!-- Settings Tab -->
@@ -108,7 +108,7 @@ const handleLogout = () => {
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">settings</span>
-                    <span>Settings</span>
+                    <span>Pengaturan</span>
                 </button>
             </div>
 
@@ -118,8 +118,8 @@ const handleLogout = () => {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Admin Staff</p>
-                            <p class="text-xs text-secondary mt-1">Main Warehouse</p>
+                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
+                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -131,7 +131,7 @@ const handleLogout = () => {
                     @click="router.visit('/kasir')" 
                     class="w-full bg-primary text-on-primary font-bold min-h-[48px] rounded hover:brightness-90 active:translate-y-[1px] transition-all cursor-pointer"
                 >
-                    New Transaction
+                    Transaksi Baru
                 </button>
             </div>
         </aside>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 // Toast state
 const toastMessage = ref('');
@@ -104,70 +104,55 @@ const openOwnerMenu = (menuName) => {
         </nav>
 
         <!-- Side Navigation Bar (Desktop) -->
-        <aside class="hidden md:flex flex-col h-full py-base px-base space-y-2 bg-surface-container border-r-2 border-outline-variant w-64 shrink-0">
+        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0">
             <div class="px-4 py-6">
                 <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">
                 <!-- Dashboard Tab (Active) -->
-                <button 
-                    @click="setTab('dashboard')"
-                    :class="[
-                        'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
-                        currentTab === 'dashboard' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
-                    ]"
+                <Link 
+                    href="/dashboard"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">dashboard</span>
-                    <span class="text-label-md font-label-md">Dashboard</span>
-                </button>
+                    <span>Dashboard</span>
+                </Link>
 
                 <!-- Inventory Tab -->
-                <button 
-                    @click="setTab('inventory')"
-                    :class="[
-                        'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
-                        currentTab === 'inventory' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
-                    ]"
+                <Link 
+                    href="/inventory"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">inventory_2</span>
-                    <span class="text-label-md font-label-md">Inventory</span>
-                </button>
+                    <span>Inventaris</span>
+                </Link>
 
                 <!-- Sales Tab -->
-                <button 
-                    @click="setTab('sales')"
-                    :class="[
-                        'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
-                        currentTab === 'sales' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
-                    ]"
+                <Link 
+                    href="/penjualan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">point_of_sale</span>
-                    <span class="text-label-md font-label-md">Sales</span>
-                </button>
+                    <span>Penjualan</span>
+                </Link>
 
                 <!-- Reports Tab -->
                 <button 
                     @click="setTab('reports')"
-                    :class="[
-                        'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
-                        currentTab === 'reports' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
-                    ]"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">analytics</span>
-                    <span class="text-label-md font-label-md">Reports</span>
+                    <span>Laporan</span>
                 </button>
 
                 <!-- Settings Tab -->
                 <button 
                     @click="setTab('settings')"
-                    :class="[
-                        'flex items-center gap-3 px-4 py-3 font-bold rounded-lg transition-all duration-100 active:scale-95 text-left w-full cursor-pointer',
-                        currentTab === 'settings' ? 'bg-secondary-container text-on-secondary-container' : 'text-secondary hover:bg-surface-container-high'
-                    ]"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">settings</span>
-                    <span class="text-label-md font-label-md">Settings</span>
+                    <span>Pengaturan</span>
                 </button>
             </div>
 
@@ -175,10 +160,10 @@ const openOwnerMenu = (menuName) => {
             <div class="mt-auto border-t border-outline-variant pt-4 pb-2 px-4 space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
+                        <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Admin Staff</p>
-                            <p class="text-xs text-secondary mt-1">Main Warehouse</p>
+                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
+                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -187,10 +172,10 @@ const openOwnerMenu = (menuName) => {
                     </button>
                 </div>
                 <button 
-                    @click="startTransaction" 
-                    class="w-full bg-primary text-on-primary font-bold py-3 rounded-lg hover:brightness-95 transition-all active:translate-y-px cursor-pointer"
+                    @click="router.visit('/kasir')" 
+                    class="w-full bg-primary text-on-primary font-bold min-h-[48px] rounded hover:brightness-90 active:translate-y-[1px] transition-all cursor-pointer"
                 >
-                    New Transaction
+                    Transaksi Baru
                 </button>
             </div>
         </aside>
