@@ -190,57 +190,102 @@ const formatRupiah = (number) => {
             </div>
         </nav>
 
-        <!-- Side Navigation Bar (Desktop) -->
-        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r border-outline-variant py-6 px-4 shrink-0">
-            <div class="px-4 pb-6 border-b border-outline-variant mb-4">
-                <h1 class="text-xl text-primary font-bold">Toko Material POS</h1>
-                <div class="text-sm text-secondary mt-1">Hello, {{ auth?.user?.name }}</div>
+        <!-- SIDE NAVBAR (Desktop) -->
+        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
+            <div class="px-4 py-6">
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">
-                <Link v-if="auth?.user?.role === 'owner'" href="/dashboard" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-surface-container-high transition-colors text-secondary">
+                <!-- Dashboard Tab -->
+                <Link 
+                    href="/dashboard"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
                     <span class="material-symbols-outlined">dashboard</span>
                     <span>Dashboard</span>
                 </Link>
-                <Link href="/kasir" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-surface-container-high transition-colors text-secondary">
-                    <span class="material-symbols-outlined">point_of_sale</span>
-                    <span>Kasir</span>
-                </Link>
-                <Link href="/inventaris" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-surface-container-high transition-colors text-secondary">
+
+                <!-- Inventory Tab -->
+                <Link 
+                    href="/inventaris"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
                     <span class="material-symbols-outlined">inventory_2</span>
                     <span>Inventaris</span>
                 </Link>
-                <Link href="/restock" class="flex items-center gap-3 px-4 py-3 font-bold rounded bg-secondary-container text-on-secondary-container">
-                    <span class="material-symbols-outlined">add_box</span>
-                    <span>Restock Stok</span>
+
+                <!-- Restock Tab (Active) -->
+                <Link 
+                    href="/restock"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span>Restok</span>
                 </Link>
-                <Link v-if="auth?.user?.role === 'owner'" href="/laporan" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-surface-container-high transition-colors text-secondary">
+
+                <!-- Sales Tab -->
+                <Link 
+                    href="/penjualan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">point_of_sale</span>
+                    <span>Penjualan</span>
+                </Link>
+
+                <!-- Reports Tab -->
+                <Link 
+                    href="/laporan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Laporan</span>
                 </Link>
-                <Link href="/pengaturan" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-surface-container-high transition-colors text-secondary">
+
+                <!-- Settings Tab -->
+                <Link 
+                    href="/pengaturan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
                     <span class="material-symbols-outlined">settings</span>
                     <span>Pengaturan</span>
                 </Link>
             </div>
-            <div class="mt-auto border-t border-outline-variant pt-4">
-                <button @click="handleLogout" class="flex items-center gap-3 px-4 py-3 font-bold rounded hover:bg-error-container text-error transition-colors w-full text-left">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span>Keluar</span>
+
+            <!-- Profile & New Transaction Area -->
+            <div class="mt-auto border-t border-outline-variant pt-4 pb-2 px-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
+                        <div>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
+                        </div>
+                    </div>
+                    <!-- Logout button on desktop -->
+                    <button @click="handleLogout" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Keluar dari sistem">
+                        logout
+                    </button>
+                </div>
+                <button 
+                    @click="router.visit('/kasir')" 
+                    class="w-full bg-primary text-on-primary font-bold min-h-[48px] rounded hover:brightness-90 active:translate-y-[1px] transition-all cursor-pointer"
+                >
+                    Transaksi Baru
                 </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col h-full overflow-hidden bg-surface relative z-10">
-            <header class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-outline-variant">
-                <div>
-                    <h2 class="text-2xl font-bold text-on-surface">Restock Stok Barang</h2>
-                    <p class="text-secondary text-sm mt-1">Tambah stok dan perbarui HPP (Harga Pokok Penjualan)</p>
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <!-- TopNavBar -->
+            <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min bg-surface border-b-2 border-outline-variant">
+                <div class="flex items-center gap-4">
+                    <span class="text-headline-md font-headline-md font-bold text-primary">Restock Stok Barang</span>
                 </div>
             </header>
 
-            <div class="flex-1 overflow-y-auto p-8">
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
                     <!-- Restock Form -->
@@ -380,23 +425,41 @@ const formatRupiah = (number) => {
             </div>
         </div>
 
+        <!-- BottomNavBar (Mobile Only) -->
+        <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 bg-surface border-t-2 border-outline-variant shadow-lg md:hidden z-50">
+            <Link href="/dashboard" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                <span class="material-symbols-outlined">home</span>
+                <span class="text-[10px] font-bold">Home</span>
+            </Link>
+            <Link href="/inventaris" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                <span class="material-symbols-outlined">apps</span>
+                <span class="text-[10px] font-bold">Inventory</span>
+            </Link>
+            <Link href="/kasir" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                <span class="material-symbols-outlined">add_shopping_cart</span>
+                <span class="text-[10px] font-bold">POS</span>
+            </Link>
+            <Link href="/restock" class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1 cursor-pointer">
+                <span class="material-symbols-outlined">local_shipping</span>
+                <span class="text-[10px] font-bold">Restok</span>
+            </Link>
+        </nav>
     </div>
 </template>
 
 <style scoped>
-/* Scrollbar Styling */
-::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
-::-webkit-scrollbar-track {
-    background: transparent; 
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
 }
-::-webkit-scrollbar-thumb {
-    background: #e0e3e5; 
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-outline-variant, #c4c7c8);
     border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: #c4c7c9; 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-outline, #74777f);
 }
 </style>

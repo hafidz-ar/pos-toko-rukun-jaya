@@ -78,6 +78,15 @@ const activeTab = ref('profil-toko');
                     <span>Inventaris</span>
                 </Link>
 
+                <!-- Restock Tab -->
+                <Link 
+                    href="/restock"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span>Restok</span>
+                </Link>
+
                 <!-- Sales Tab -->
                 <Link 
                     href="/penjualan"
@@ -438,22 +447,22 @@ Terima kasih atas kunjungan Anda!</textarea>
             
             <!-- BottomNavBar Component (Mobile Only) -->
             <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 bg-surface border-t-2 border-outline-variant shadow-lg md:hidden z-50">
-                <button class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                <Link href="/dashboard" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
                     <span class="material-symbols-outlined">home</span>
                     <span class="text-[10px] font-bold">Home</span>
-                </button>
-                <button class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                </Link>
+                <Link href="/inventaris" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
                     <span class="material-symbols-outlined">apps</span>
                     <span class="text-[10px] font-bold">Inventory</span>
-                </button>
-                <button class="flex flex-col items-center justify-center text-secondary cursor-pointer">
+                </Link>
+                <Link href="/kasir" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
                     <span class="material-symbols-outlined">add_shopping_cart</span>
                     <span class="text-[10px] font-bold">POS</span>
-                </button>
-                <button class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1 cursor-pointer">
+                </Link>
+                <Link href="/pengaturan" class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1 cursor-pointer">
                     <span class="material-symbols-outlined">settings</span>
                     <span class="text-[10px] font-bold">Settings</span>
-                </button>
+                </Link>
             </nav>
         </main>
     </div>

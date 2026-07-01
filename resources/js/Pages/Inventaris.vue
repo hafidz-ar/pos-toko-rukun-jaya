@@ -101,6 +101,15 @@ const handleNavAction = (menuName) => {
                     <span>Inventaris</span>
                 </Link>
 
+                <!-- Restock Tab -->
+                <Link 
+                    href="/restock"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span>Restok</span>
+                </Link>
+
                 <!-- Sales Tab -->
                 <Link 
                     href="/penjualan"
@@ -448,19 +457,19 @@ const handleNavAction = (menuName) => {
             <span class="material-symbols-outlined">apps</span>
             <span class="text-[10px] font-semibold">Inventory</span>
         </Link>
-        <button 
-            @click="triggerToast('Membuka kasir untuk transaksi baru...')"
+        <Link 
+            href="/kasir"
             class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 text-secondary active:translate-y-[1px] transition-all duration-200"
         >
             <span class="material-symbols-outlined">add_shopping_cart</span>
             <span class="text-[10px] font-semibold">POS</span>
-        </button>
-        <button 
-            @click="triggerToast('Menu Reports sedang dalam pengembangan.')"
+        </Link>
+        <Link 
+            href="/laporan"
             class="flex flex-col items-center justify-center rounded-full px-4 py-1 min-h-[48px] w-16 text-secondary active:translate-y-[1px] transition-all duration-200"
         >
             <span class="material-symbols-outlined">assessment</span>
-            <span class="text-[10px] font-semibold">Reports</span>
-        </button>
+            <span class="text-[10px] font-semibold">Laporan</span>
+        </Link>
     </nav>
 </template>

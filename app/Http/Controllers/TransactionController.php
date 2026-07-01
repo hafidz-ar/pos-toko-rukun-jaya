@@ -40,7 +40,7 @@ class TransactionController extends Controller
                 ]),
             ]);
 
-        return Inertia::render('Auth/Kasir', [
+        return Inertia::render('Kasir', [
             'products' => $products,
         ]);
     }

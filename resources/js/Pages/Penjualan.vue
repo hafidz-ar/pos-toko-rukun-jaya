@@ -26,13 +26,13 @@ const currentTab = ref('sales');
 const setTab = (tab) => {
     currentTab.value = tab;
     if (tab === 'inventory') {
-        router.visit('/inventory');
+        router.visit('/inventaris');
     } else if (tab === 'dashboard') {
         router.visit('/dashboard');
     } else if (tab === 'sales') {
-        router.visit('/penjualan');
-    } else {
-        triggerToast(`Menu ${tab.charAt(0).toUpperCase() + tab.slice(1)} sedang dalam pengembangan.`);
+        router.visit('/kasir');
+    } else if (tab === 'reports') {
+        router.visit('/laporan');
     }
 };
 
@@ -88,6 +88,15 @@ const handleLogout = () => {
                 >
                     <span class="material-symbols-outlined">inventory_2</span>
                     <span>Inventaris</span>
+                </Link>
+
+                <!-- Restock Tab -->
+                <Link 
+                    href="/restock"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span>Restok</span>
                 </Link>
 
                 <!-- Sales Tab (Active) -->
