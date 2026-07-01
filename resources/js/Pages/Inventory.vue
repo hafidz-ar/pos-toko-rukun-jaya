@@ -95,13 +95,13 @@ const handleNavAction = (menuName) => {
                 </Link>
 
                 <!-- Sales Tab -->
-                <button 
-                    @click="handleNavAction('Sales')"
+                <Link 
+                    href="/penjualan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
                     <span class="material-symbols-outlined">point_of_sale</span>
                     <span>Sales</span>
-                </button>
+                </Link>
 
                 <!-- Reports Tab -->
                 <button 
@@ -152,18 +152,6 @@ const handleNavAction = (menuName) => {
             <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min bg-surface border-b-2 border-outline-variant">
                 <div class="flex items-center gap-4">
                     <span class="text-headline-md font-headline-md font-bold text-primary">Daftar Inventori</span>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div class="hidden md:flex relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-secondary">
-                            <span class="material-symbols-outlined">search</span>
-                        </span>
-                        <input class="pl-10 pr-4 py-2 bg-surface-container rounded-lg border-none text-label-md focus:ring-0 w-64" placeholder="Cari barang..." type="text">
-                    </div>
-                    <div class="flex gap-4">
-                        <span class="material-symbols-outlined text-secondary cursor-pointer">settings</span>
-                        <span class="material-symbols-outlined text-secondary cursor-pointer">account_circle</span>
-                    </div>
                 </div>
             </header>
 

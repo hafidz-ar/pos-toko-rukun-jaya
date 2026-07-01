@@ -19,3 +19,7 @@ Route::get('/kasir', function () {
     return Inertia::render('Auth/Kasir');
 })->name('kasir');
 
+Route::get('/penjualan', function () {
+    return Inertia::render('Penjualan');
+})->name('penjualan');
+

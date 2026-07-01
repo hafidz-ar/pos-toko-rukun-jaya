@@ -55,7 +55,7 @@ const setTab = (tab) => {
     } else if (tab === 'dashboard') {
         router.visit('/dashboard');
     } else if (tab === 'sales') {
-        router.visit('/kasir');
+        router.visit('/penjualan');
     } else {
         triggerToast(`Menu ${tab.charAt(0).toUpperCase() + tab.slice(1)} sedang dalam pengembangan.`);
     }
