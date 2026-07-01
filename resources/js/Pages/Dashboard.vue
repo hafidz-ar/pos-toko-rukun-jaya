@@ -1,6 +1,20 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+
+const props = defineProps({
+    auth: Object,
+    period: String,
+    totalOmset: Number,
+    jumlahTransaksi: Number,
+    totalLabaKotor: Number,
+    labaPerProduk: Array,
+    labaPerKategori: Array,
+    stokKritis: Array,
+    transaksiMerugi: Number,
+    chartData: Array,
+    riwayatHariIni: Array,
+});
 
 // Toast state
 const toastMessage = ref('');
@@ -19,16 +33,44 @@ const triggerToast = (message) => {
 // Chart hover state
 const hoveredPoint = ref(null);
 
-const chartPoints = [
-    { day: 'Sen', x: 0, y: 140, amount: 'Rp 1.200.000' },
-    { day: 'Sel', x: 100, y: 118, amount: 'Rp 1.650.000' },
-    { day: 'Rab', x: 200, y: 128, amount: 'Rp 1.450.000' },
-    { day: 'Kam', x: 300, y: 80, amount: 'Rp 2.400.000' },
-    { day: 'Jum', x: 400, y: 95, amount: 'Rp 2.100.000' },
-    { day: 'Sab', x: 500, y: 60, amount: 'Rp 2.800.000' },
-    { day: 'Min', x: 600, y: 75, amount: 'Rp 2.500.000' },
-    { day: 'Hari Ini', x: 700, y: 45, amount: 'Rp 3.100.000' }
-];
+const chartPoints = computed(() => {
+    const data = props.chartData || [];
+    if (data.length === 0) return [];
+    const maxAmount = Math.max(...data.map(d => d.amount), 1);
+    
+    return data.map((d, index) => {
+        return {
+            day: d.day,
+            date: d.date,
+            amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(d.amount),
+            rawAmount: d.amount,
+            x: (index / Math.max(1, data.length - 1)) * 700,
+            y: 180 - ((d.amount / maxAmount) * 140) // 180 max y down, 40 min y up
+        };
+    });
+});
+
+const chartPath = computed(() => {
+    if (!chartPoints.value || chartPoints.value.length === 0) return '';
+    return chartPoints.value.map((p, i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
+});
+
+const chartMaxAmount = computed(() => {
+    const data = props.chartData || [];
+    const maxAmount = Math.max(...data.map(d => d.amount), 0);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(maxAmount);
+});
+
+const chartAvgAmount = computed(() => {
+    const data = props.chartData || [];
+    if (data.length === 0) return 'Rp 0';
+    const sum = data.reduce((acc, val) => acc + val.amount, 0);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(sum / data.length);
+});
+
+const formatRupiah = (number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
+};
 
 const selectPoint = (point) => {
     hoveredPoint.value = point;
@@ -162,8 +204,8 @@ const openOwnerMenu = (menuName) => {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
-                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -185,12 +227,12 @@ const openOwnerMenu = (menuName) => {
             <!-- Header Section -->
             <header class="flex flex-row justify-between items-center mb-gutter">
                 <div>
-                    <h2 class="text-headline-md font-headline-md text-on-background">Halo, Admin</h2>
+                    <h2 class="text-headline-md font-headline-md text-on-background">Halo, {{ props.auth?.user?.name?.split(' ')[0] }}</h2>
                     <p class="text-body-md font-body-md text-secondary">Selamat datang kembali di sistem kasir material.</p>
                 </div>
                 <div class="flex items-center bg-surface-container-high border border-outline-variant px-4 py-2 rounded-lg">
                     <span class="material-symbols-outlined text-secondary mr-2" style="font-size: 20px;">badge</span>
-                    <span class="text-label-md font-label-md text-on-secondary-fixed-variant">Employee Role</span>
+                    <span class="text-label-md font-label-md text-on-secondary-fixed-variant">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</span>
                 </div>
             </header>
 
@@ -284,8 +326,8 @@ const openOwnerMenu = (menuName) => {
                                 <span class="material-symbols-outlined text-on-secondary-container">assignment_turned_in</span>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Transaksi Hari Ini</p>
-                                <p class="text-headline-md font-headline-md">124 Nota</p>
+                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Transaksi ({{ props.period }})</p>
+                                <p class="text-headline-md font-headline-md">{{ props.jumlahTransaksi }} Nota</p>
                             </div>
                         </div>
                         
@@ -297,21 +339,21 @@ const openOwnerMenu = (menuName) => {
                                 <span class="material-symbols-outlined text-on-tertiary-fixed-variant">trending_up</span>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Omset Berjalan</p>
-                                <p class="text-headline-md font-headline-md">Rp 12.450.000</p>
+                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Omset ({{ props.period }})</p>
+                                <p class="text-headline-md font-headline-md">{{ formatRupiah(props.totalOmset) }}</p>
                             </div>
                         </div>
                         
                         <div class="h-10 w-px bg-outline-variant hidden md:block"></div>
                         
                         <!-- Stok Menipis -->
-                        <div class="flex items-center gap-4 w-full md:w-auto">
+                        <div class="flex items-center gap-4 w-full md:w-auto cursor-pointer hover:opacity-80" @click="router.visit('/inventaris')">
                             <div class="p-3 bg-error-container rounded-lg shrink-0">
                                 <span class="material-symbols-outlined text-on-error-container">warning</span>
                             </div>
                             <div>
                                 <p class="text-xs text-secondary uppercase font-bold tracking-wider">Stok Menipis</p>
-                                <p class="text-headline-md font-headline-md text-error">8 Item</p>
+                                <p class="text-headline-md font-headline-md text-error">{{ props.stokKritis?.length || 0 }} Item</p>
                             </div>
                         </div>
 
@@ -332,11 +374,11 @@ const openOwnerMenu = (menuName) => {
                         <!-- Chart with Y-Axis and SVG Area -->
                         <div class="flex gap-4 h-64 w-full relative select-none">
                             <!-- Y-axis Labels -->
-                            <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pb-1 pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[60px] select-none">
-                                <span>Rp 4.0M</span>
-                                <span>Rp 3.0M</span>
-                                <span>Rp 2.0M</span>
-                                <span>Rp 1.0M</span>
+                            <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pb-1 pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[80px] select-none">
+                                <span>{{ chartMaxAmount }}</span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
                                 <span>Rp 0</span>
                             </div>
 
@@ -353,9 +395,9 @@ const openOwnerMenu = (menuName) => {
 
                                 <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 700 200">
                                     <!-- Area Path with Gradient -->
-                                    <path d="M0,140 L100,118 L200,128 L300,80 L400,95 L500,60 L600,75 L700,45 V200 H0 Z" fill="url(#chartGradient)" opacity="0.1"></path>
+                                    <path v-if="chartPath" :d="chartPath + ' V200 H0 Z'" fill="url(#chartGradient)" opacity="0.1"></path>
                                     <!-- Line Path -->
-                                    <path d="M0,140 L100,118 L200,128 L300,80 L400,95 L500,60 L600,75 L700,45" fill="none" stroke="var(--color-primary)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+                                    <path v-if="chartPath" :d="chartPath" fill="none" stroke="var(--color-primary)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
                                     
                                     <defs>
                                         <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
@@ -371,7 +413,7 @@ const openOwnerMenu = (menuName) => {
                                         v-for="(point, idx) in chartPoints" 
                                         :key="idx" 
                                         class="absolute top-0 bottom-0 pointer-events-auto cursor-pointer flex flex-col items-center"
-                                        :style="{ left: `${(idx * 100) / (chartPoints.length - 1)}%`, width: '40px', transform: 'translateX(-20px)' }"
+                                        :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%`, width: '40px', transform: 'translateX(-20px)' }"
                                         @mouseenter="selectPoint(point)"
                                         @mouseleave="clearPoint"
                                     >
@@ -382,15 +424,15 @@ const openOwnerMenu = (menuName) => {
                                         <div 
                                             v-if="hoveredPoint && hoveredPoint.day === point.day" 
                                             class="absolute bg-inverse-surface text-inverse-on-surface px-3 py-1.5 rounded text-xs font-semibold shadow-md whitespace-nowrap z-20 pointer-events-none transition-all duration-155 left-1/2 -translate-x-1/2"
-                                            :style="{ top: `calc(${point.y / 2}% - 45px)` }"
+                                            :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 45px)` }"
                                         >
-                                            <div class="font-bold text-primary-fixed">{{ point.day }}: {{ point.amount }}</div>
+                                            <div class="font-bold text-primary-fixed">{{ point.day }} ({{ point.date }}): {{ point.amount }}</div>
                                         </div>
 
                                         <!-- Small dot on line path -->
                                         <div 
                                             class="absolute w-3 h-3 rounded-full border-2 border-surface bg-primary transition-all duration-150 pointer-events-none left-[14px]"
-                                            :style="{ top: `calc(${point.y / 2}% - 6px)` }"
+                                            :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 6px)` }"
                                             :class="{ 'scale-150 shadow-md ring-2 ring-primary-fixed': hoveredPoint && hoveredPoint.day === point.day }"
                                         ></div>
                                     </div>
@@ -401,17 +443,10 @@ const openOwnerMenu = (menuName) => {
                         <!-- Axis Labels -->
                         <div class="flex gap-4 mt-8 text-xs text-secondary font-semibold pt-2 border-t border-outline-variant/30">
                             <!-- Spacer to align with Y-axis -->
-                            <div class="w-[60px] shrink-0 border-r border-transparent"></div>
+                            <div class="w-[80px] shrink-0 border-r border-transparent"></div>
                             <!-- X-axis Labels -->
                             <div class="flex-1 flex justify-between">
-                                <span>Sen</span>
-                                <span>Sel</span>
-                                <span>Rab</span>
-                                <span>Kam</span>
-                                <span>Jum</span>
-                                <span>Sab</span>
-                                <span>Min</span>
-                                <span>Hari Ini</span>
+                                <span v-for="point in chartPoints" :key="point.day">{{ point.day }}</span>
                             </div>
                         </div>
 
@@ -419,15 +454,11 @@ const openOwnerMenu = (menuName) => {
                         <div class="mt-8 flex justify-around text-center border-t border-outline-variant pt-6">
                             <div>
                                 <p class="text-xs text-secondary uppercase font-bold">Tertinggi</p>
-                                <p class="text-label-xl text-primary">Rp 2.8M</p>
+                                <p class="text-label-xl text-primary">{{ chartMaxAmount }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold">Rata-rata</p>
-                                <p class="text-label-xl text-on-background">Rp 1.7M</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-secondary uppercase font-bold">Pertumbuhan</p>
-                                <p class="text-label-xl text-on-tertiary-fixed-variant">+12%</p>
+                                <p class="text-xs text-secondary uppercase font-bold">Rata-rata Harian</p>
+                                <p class="text-label-xl text-on-background">{{ chartAvgAmount }}</p>
                             </div>
                         </div>
                     </div>
@@ -452,48 +483,22 @@ const openOwnerMenu = (menuName) => {
                                 </tr>
                             </thead>
                             <tbody class="text-body-md text-on-background">
-                                <tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
-                                    <td class="p-4 text-secondary">14:30 WIB</td>
-                                    <td class="p-4">Semen Tiga Roda (10 Sak), Besi Beton 8mm...</td>
-                                    <td class="p-4 font-bold">Rp 850.000</td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-md text-xs font-bold">QRIS</span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="text-primary font-bold text-label-md">Member (-5%)</span>
-                                    </td>
+                                <tr v-if="props.riwayatHariIni && props.riwayatHariIni.length === 0">
+                                    <td colspan="5" class="p-8 text-center text-secondary">Belum ada transaksi hari ini.</td>
                                 </tr>
-                                <tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
-                                    <td class="p-4 text-secondary">13:15 WIB</td>
-                                    <td class="p-4">Cat Tembok Dulux 25kg (1 Pail)</td>
-                                    <td class="p-4 font-bold">Rp 1.200.000</td>
+                                <tr v-for="trx in props.riwayatHariIni" :key="trx.id" class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
+                                    <td class="p-4 text-secondary">{{ trx.waktu }}</td>
+                                    <td class="p-4">{{ trx.items_summary }} ({{ trx.items_count }} item)</td>
+                                    <td class="p-4 font-bold">{{ formatRupiah(trx.total) }}</td>
                                     <td class="p-4">
-                                        <span class="px-2 py-1 bg-surface-container-highest text-on-surface rounded-md text-xs font-bold">Cash</span>
+                                        <span :class="[
+                                            'px-2 py-1 rounded-md text-xs font-bold',
+                                            trx.payment_method === 'QRIS' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-surface-container-highest text-on-surface'
+                                        ]">{{ trx.payment_method }}</span>
                                     </td>
                                     <td class="p-4">
-                                        <span class="text-secondary">-</span>
-                                    </td>
-                                </tr>
-                                <tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
-                                    <td class="p-4 text-secondary">11:45 WIB</td>
-                                    <td class="p-4">Pipa PVC AW 1/2" (20 Btg), Fitting...</td>
-                                    <td class="p-4 font-bold">Rp 450.000</td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-1 bg-surface-container-highest text-on-surface rounded-md text-xs font-bold">Cash</span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="text-primary font-bold text-label-md">Grosir (-10%)</span>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-surface-container-low transition-colors">
-                                    <td class="p-4 text-secondary">10:00 WIB</td>
-                                    <td class="p-4">Triplek 12mm (5 Lembar), Paku Payung...</td>
-                                    <td class="p-4 font-bold">Rp 650.000</td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-md text-xs font-bold">QRIS</span>
-                                    </td>
-                                    <td class="p-4">
-                                        <span class="text-secondary">-</span>
+                                        <span v-if="trx.discount > 0" class="text-primary font-bold text-label-md">-{{ formatRupiah(trx.discount) }}</span>
+                                        <span v-else class="text-secondary">-</span>
                                     </td>
                                 </tr>
                             </tbody>

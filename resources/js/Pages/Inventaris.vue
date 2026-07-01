@@ -2,6 +2,13 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
+const props = defineProps({
+    auth: Object,
+    products: Array,
+    categories: Array,
+    filters: Object,
+});
+
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 
@@ -128,8 +135,8 @@ const handleNavAction = (menuName) => {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
-                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -189,138 +196,39 @@ const handleNavAction = (menuName) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-outline-variant">
-                                <!-- Item 1: PVC Pipe -->
-                                <tr class="hover:bg-surface-container-low transition-colors align-middle">
-                                    <td class="px-6 py-4">
-                                        <div class="w-16 h-16 rounded-lg border border-outline-variant overflow-hidden bg-white shadow-sm">
-                                            <img alt="PVC Pipe" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLv2wWezj5LFqdV7oVdxNHt47w02ESWpxXqklHLRsRVzo3oVhCv5BIyH5FfKnJaGBRacD7Lf0LUC05NytqOe5Ky7LiCHd2M4UmBLNnyDkO88lSE6l6tEzVdocRHoCSecWSSO_JPWkceWsLK8ZJEjH1u-PqmDSSRm_EGswW4jrf0jcg7d8G3Hf2w4ZwN9XpV1flqC5ectfgI3gLTi_MztFFA7YruGmp7XYUmI_JVE3aP5S4_6y_ytTBMtGgI">
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-on-surface text-body-md">Pipa PVC Wavin 3/4" (AW)</span>
-                                            <span class="font-mono text-xs text-primary font-bold tracking-wider">PVC-34-WAV-01</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">Pipa</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex flex-col items-end">
-                                            <span class="font-bold text-on-surface">150</span>
-                                            <span class="text-[10px] text-secondary uppercase">Batang</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="font-bold text-on-surface">Rp 25.000</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span class="bg-surface-container-high border border-outline-variant px-2 py-1 font-mono text-xs font-bold rounded">RAK-A1</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="bg-primary-container/10 text-primary hover:bg-primary hover:text-white transition-all p-2 rounded-lg flex items-center justify-center mx-auto" @click="openEditModal" title="Update Stock &amp; Price">
-                                            <span class="material-symbols-outlined">edit_square</span>
-                                        </button>
-                                    </td>
+                                <tr v-if="props.products && props.products.length === 0">
+                                    <td colspan="7" class="px-6 py-8 text-center text-secondary">Belum ada barang di inventaris.</td>
                                 </tr>
-                                
-                                <!-- Item 2: White Paint -->
-                                <tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors align-middle">
+                                <tr v-for="(product, index) in props.products" :key="product.id" :class="[
+                                    'hover:bg-surface-container-low transition-colors align-middle',
+                                    index % 2 !== 0 ? 'bg-surface-container-lowest' : ''
+                                ]">
                                     <td class="px-6 py-4">
-                                        <div class="w-16 h-16 rounded-lg border border-outline-variant overflow-hidden bg-white shadow-sm">
-                                            <img alt="White Paint" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLuMrNSLP3aG2yyjWy6jwhVMilXYd0NkLnAMTgr7YV_UsX1rB3oNFLoIjnX1arvjsF-cWw0ikB1Oec4VeHXM5w1Q-MDBjvfiEvvFzZpHoY5iTEG_RNbRj8q_CmYdkIy1mFDamlw_UZ3Z-bjHC6EYtv4gjFVrfke6Ua7jodBnxImQYWhv54U11iil7SiDIleuIdfoLEQfNQo6SLgRse494tosDszYlOcdBpbNPRPr86mDGREzDw8bGSPQnqU">
+                                        <div class="w-16 h-16 rounded-lg border border-outline-variant overflow-hidden bg-white shadow-sm flex items-center justify-center">
+                                            <img v-if="product.photo_url" :alt="product.name" class="w-full h-full object-cover" :src="product.photo_url">
+                                            <span v-else class="material-symbols-outlined text-outline">inventory_2</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
-                                            <span class="font-bold text-on-surface text-body-md">Cat Tembok Nippon Paint 5kg</span>
-                                            <span class="font-mono text-xs text-primary font-bold tracking-wider">CAT-NP-WHT-05</span>
+                                            <span class="font-bold text-on-surface text-body-md">{{ product.name }}</span>
+                                            <span class="font-mono text-xs text-primary font-bold tracking-wider">SKU-{{ product.id.toString().padStart(4, '0') }}</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">Cat</span>
+                                        <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">{{ product.category }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex flex-col items-end">
-                                            <span class="font-bold text-error">12</span>
-                                            <span class="text-[10px] text-error font-bold uppercase">Low Stock</span>
+                                            <span :class="['font-bold', product.is_low_stock ? 'text-error' : 'text-on-surface']">{{ product.stock_qty_base_unit }}</span>
+                                            <span :class="['text-[10px] font-bold uppercase', product.is_low_stock ? 'text-error' : 'text-secondary']">{{ product.is_low_stock ? 'Low Stock' : product.base_unit }}</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <span class="font-bold text-on-surface">Rp 120.000</span>
+                                        <span class="font-bold text-on-surface">{{ new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(product.selling_price_per_base_unit) }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="bg-surface-container-high border border-outline-variant px-2 py-1 font-mono text-xs font-bold rounded">RAK-C2</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="bg-primary-container/10 text-primary hover:bg-primary hover:text-white transition-all p-2 rounded-lg flex items-center justify-center mx-auto" @click="openEditModal" title="Update Stock &amp; Price">
-                                            <span class="material-symbols-outlined">edit_square</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Item 3: Cement -->
-                                <tr class="hover:bg-surface-container-low transition-colors align-middle">
-                                    <td class="px-6 py-4">
-                                        <div class="w-16 h-16 rounded-lg border border-outline-variant overflow-hidden bg-white shadow-sm">
-                                            <img alt="Cement" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLtpJxMGRj-5-WpjBrBHHq7FEzzM9htfXIdyBjYMYMZXO_Atc-NvDGhy7_nDKvFdElkV36N3MbnCtka7L22Cajr9gYgtszphvYUT72_SRWyL1BhkiXSVyWOXEwlcF8jHls2R1bi4iD3dIT9WrXhq480UGCK-lCBKs0jsbpImhtNXnOh3oZbAdfRifDrpz6tkhMPmrfFgYw8eyCpGzQaBRpoVHfq1l32Dbrx0F5uLuulSEuPL4VItVKzwWic">
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-on-surface text-body-md">Semen Tiga Roda 40kg</span>
-                                            <span class="font-mono text-xs text-primary font-bold tracking-wider">TR-PC-40KG</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">Semen</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex flex-col items-end">
-                                            <span class="font-bold text-on-surface">200</span>
-                                            <span class="text-[10px] text-secondary uppercase">Sak</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="font-bold text-on-surface">Rp 68.500</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span class="bg-surface-container-high border border-outline-variant px-2 py-1 font-mono text-xs font-bold rounded">BLOK-B1</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <button class="bg-primary-container/10 text-primary hover:bg-primary hover:text-white transition-all p-2 rounded-lg flex items-center justify-center mx-auto" @click="openEditModal" title="Update Stock &amp; Price">
-                                            <span class="material-symbols-outlined">edit_square</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                
-                                <!-- Item 4: Wood Nails -->
-                                <tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors align-middle">
-                                    <td class="px-6 py-4">
-                                        <div class="w-16 h-16 rounded-lg border border-outline-variant overflow-hidden bg-white shadow-sm">
-                                            <img alt="Wood Nails" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLuafDkHBlh-MUWfzbSh8NqCc_Zyg-9p-nGK4AlilY4uFuiqpUu0MDuI5Ncqgi77-Hhf71CbQsTUvIT9qVdWXlmwnObJBYGoWZPaqY0qYhjMOYVLLiAmQw5pxg4RaBgvMw-3J5Qf64tEYPuWN11X92wBRolZNwr_bfgn0mGrcMgsVIweQWmUYfkdsv_UUjY7xDkalZitwktLP9PtJZHcWHV2JH8jv8qRnO-9suwSKiHzxraEjv4V_-__mw">
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-on-surface text-body-md">Paku Kayu 3 Inch (Box)</span>
-                                            <span class="font-mono text-xs text-primary font-bold tracking-wider">PAKU-K-3INC</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">Hardware</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <div class="flex flex-col items-end">
-                                            <span class="font-bold text-on-surface">50</span>
-                                            <span class="text-[10px] text-secondary uppercase">Box</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span class="font-bold text-on-surface">Rp 42.000</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span class="bg-surface-container-high border border-outline-variant px-2 py-1 font-mono text-xs font-bold rounded">RAK-D3</span>
+                                        <span class="bg-surface-container-high border border-outline-variant px-2 py-1 font-mono text-xs font-bold rounded">{{ product.location || '-' }}</span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <button class="bg-primary-container/10 text-primary hover:bg-primary hover:text-white transition-all p-2 rounded-lg flex items-center justify-center mx-auto" @click="openEditModal" title="Update Stock &amp; Price">

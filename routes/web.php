@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
 
         // Laporan Keuangan
         Route::get('/laporan', [ReportController::class, 'index'])->name('laporan');
+        Route::get('/laporan/export-pdf', [ReportController::class, 'exportPdf'])->name('laporan.export-pdf');
 
         // Pengaturan
         Route::get('/pengaturan', [SettingsController::class, 'index'])->name('pengaturan');

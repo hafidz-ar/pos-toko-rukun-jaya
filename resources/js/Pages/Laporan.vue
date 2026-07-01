@@ -1,6 +1,25 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+
+const props = defineProps({
+    auth: Object,
+    period: String,
+    periodLabel: String,
+    summary: Object,
+    labaPerProduk: Array,
+    labaPerKategori: Array,
+});
+
+const formatRupiah = (value) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
+};
+
+const formatShortRupiah = (value) => {
+    if (value >= 1e9) return 'Rp ' + (value / 1e9).toFixed(1) + 'M';
+    if (value >= 1e6) return 'Rp ' + (value / 1e6).toFixed(1) + 'Jt';
+    return formatRupiah(value);
+};
 
 // Toast state
 const toastMessage = ref('');
@@ -104,8 +123,8 @@ const handleLogout = () => {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
-                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -162,15 +181,11 @@ const handleLogout = () => {
                         <div class="flex justify-between items-start">
                             <div>
                                 <p class="text-label-md text-secondary font-bold uppercase tracking-wider mb-2">TOTAL OMZET</p>
-                                <h2 class="text-display-price font-display-price mb-4">Rp<br/>142.5M</h2>
+                                <h2 class="text-display-price font-display-price mb-4">{{ formatShortRupiah(props.summary?.total_omset || 0) }}</h2>
                             </div>
                             <div class="text-secondary">
                                 <span class="material-symbols-outlined">payments</span>
                             </div>
-                        </div>
-                        <div class="flex items-center text-label-md text-tertiary font-bold">
-                            <span class="material-symbols-outlined text-sm mr-1">trending_up</span>
-                            <span>+8.4% vs minggu lalu</span>
                         </div>
                     </div>
                     
@@ -178,15 +193,11 @@ const handleLogout = () => {
                         <div class="flex justify-between items-start">
                             <div>
                                 <p class="text-label-md text-secondary font-bold uppercase tracking-wider mb-2">TOTAL LABA KOTOR</p>
-                                <h2 class="text-display-price font-display-price mb-4">Rp<br/>38.2M</h2>
+                                <h2 class="text-display-price font-display-price mb-4">{{ formatShortRupiah(props.summary?.total_laba_kotor || 0) }}</h2>
                             </div>
                             <div class="text-secondary">
                                 <span class="material-symbols-outlined">savings</span>
                             </div>
-                        </div>
-                        <div class="flex items-center text-label-md text-tertiary font-bold">
-                            <span class="material-symbols-outlined text-sm mr-1">trending_up</span>
-                            <span>+5.1% vs minggu lalu</span>
                         </div>
                     </div>
                     
@@ -194,15 +205,11 @@ const handleLogout = () => {
                         <div class="flex justify-between items-start">
                             <div>
                                 <p class="text-label-md text-secondary font-bold uppercase tracking-wider mb-2">JUMLAH TRANSAKSI</p>
-                                <h2 class="text-display-price font-display-price mb-4">428</h2>
+                                <h2 class="text-display-price font-display-price mb-4">{{ props.summary?.jumlah_transaksi || 0 }}</h2>
                             </div>
                             <div class="text-secondary">
                                 <span class="material-symbols-outlined">receipt_long</span>
                             </div>
-                        </div>
-                        <div class="flex items-center text-label-md text-secondary font-bold">
-                            <span class="material-symbols-outlined text-sm mr-1">arrow_right_alt</span>
-                            <span>Stabil vs minggu lalu</span>
                         </div>
                     </div>
                 </div>
@@ -212,48 +219,29 @@ const handleLogout = () => {
                     <!-- Sales History Table -->
                     <div class="lg:col-span-7 bg-surface-container-lowest border-2 border-outline-variant rounded flex flex-col">
                         <div class="p-6 border-b-2 border-outline-variant bg-surface-container-low flex justify-between items-center">
-                            <h3 class="font-headline-md text-headline-md font-bold">Riwayat Penjualan</h3>
-                            <button class="text-primary font-bold hover:underline">Lihat Semua</button>
+                            <h3 class="font-headline-md text-headline-md font-bold">Laba Kotor per Produk</h3>
                         </div>
                         <div class="overflow-x-auto flex-1">
                             <table class="w-full text-left min-w-[600px]">
                                 <thead>
                                     <tr class="border-b-2 border-outline-variant bg-surface-container-lowest">
-                                        <th class="px-4 py-4 text-label-md font-bold text-secondary">Tanggal</th>
-                                        <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Trx</th>
+                                        <th class="px-4 py-4 text-label-md font-bold text-secondary">Produk</th>
+                                        <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Kategori</th>
                                         <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Omzet</th>
                                         <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Total HPP</th>
                                         <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Laba Kotor</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y-2 divide-outline-variant/30">
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 text-on-surface">18 Nov 2023</td>
-                                        <td class="px-4 py-4 text-right">65</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>22.1M</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>16.5M</td>
-                                        <td class="px-4 py-4 text-right font-bold text-tertiary">Rp<br/>5.6M</td>
+                                    <tr v-if="!props.labaPerProduk || props.labaPerProduk.length === 0">
+                                        <td colspan="5" class="px-4 py-8 text-center text-secondary">Tidak ada data untuk periode ini.</td>
                                     </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 text-on-surface">17 Nov 2023</td>
-                                        <td class="px-4 py-4 text-right">72</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>24.5M</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>18.2M</td>
-                                        <td class="px-4 py-4 text-right font-bold text-tertiary">Rp<br/>6.3M</td>
-                                    </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 text-on-surface">16 Nov 2023</td>
-                                        <td class="px-4 py-4 text-right">58</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>19.8M</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>14.9M</td>
-                                        <td class="px-4 py-4 text-right font-bold text-tertiary">Rp<br/>4.9M</td>
-                                    </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 text-on-surface">15 Nov 2023</td>
-                                        <td class="px-4 py-4 text-right">61</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>21.0M</td>
-                                        <td class="px-4 py-4 text-right">Rp<br/>15.5M</td>
-                                        <td class="px-4 py-4 text-right font-bold text-tertiary">Rp<br/>5.5M</td>
+                                    <tr v-for="produk in props.labaPerProduk" :key="produk.product_id" class="hover:bg-surface-container-low transition-colors">
+                                        <td class="px-4 py-4 text-on-surface">{{ produk.product_name }}</td>
+                                        <td class="px-4 py-4 text-right">{{ produk.category }}</td>
+                                        <td class="px-4 py-4 text-right">{{ formatShortRupiah(produk.total_revenue) }}</td>
+                                        <td class="px-4 py-4 text-right">{{ formatShortRupiah(produk.total_hpp) }}</td>
+                                        <td class="px-4 py-4 text-right font-bold text-tertiary">{{ formatShortRupiah(produk.total_profit) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -264,70 +252,24 @@ const handleLogout = () => {
                     <div class="lg:col-span-5 bg-surface-container-lowest border-2 border-outline-variant rounded flex flex-col h-full">
                         <div class="p-6 border-b-2 border-outline-variant bg-surface-container-low flex justify-between items-center">
                             <h3 class="font-headline-md text-headline-md font-bold">Laba Kotor per Kategori</h3>
-                            <button class="flex items-center gap-2 border-2 border-outline-variant px-3 py-1.5 rounded text-on-surface font-bold bg-surface-container-lowest hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">filter_list</span>Filter</button>
                         </div>
                         <div class="overflow-x-auto flex-1">
                             <table class="w-full text-left min-w-[400px]">
                                 <thead>
                                     <tr class="border-b-2 border-outline-variant bg-surface-container-lowest">
                                         <th class="px-4 py-4 text-label-md font-bold text-secondary">Kategori</th>
-                                        <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Jml Terjual</th>
-                                        <th class="px-4 py-4 text-label-md font-bold text-secondary text-center">Kontribusi</th>
+                                        <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Omzet</th>
                                         <th class="px-4 py-4 text-label-md font-bold text-secondary text-right">Laba Kotor</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y-2 divide-outline-variant/30">
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 font-bold text-on-surface">Semen &amp; Mortar</td>
-                                        <td class="px-4 py-4 text-right">1,240<br/><span class="text-sm text-secondary">sak</span></td>
-                                        <td class="px-4 py-4">
-                                            <div class="flex items-center gap-2 justify-center">
-                                                <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                                                    <div class="bg-primary w-[45%] h-full"></div>
-                                                </div>
-                                                <span class="font-bold">45%</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-4 text-right font-bold text-on-surface">Rp<br/>17.2M</td>
+                                    <tr v-if="!props.labaPerKategori || props.labaPerKategori.length === 0">
+                                        <td colspan="3" class="px-4 py-8 text-center text-secondary">Tidak ada data untuk periode ini.</td>
                                     </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 font-bold text-on-surface">Besi &amp; Baja</td>
-                                        <td class="px-4 py-4 text-right">850<br/><span class="text-sm text-secondary">btg</span></td>
-                                        <td class="px-4 py-4">
-                                            <div class="flex items-center gap-2 justify-center">
-                                                <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                                                    <div class="bg-tertiary w-[30%] h-full"></div>
-                                                </div>
-                                                <span class="font-bold">30%</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-4 text-right font-bold text-on-surface">Rp<br/>11.4M</td>
-                                    </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 font-bold text-on-surface">Cat &amp; Thinner</td>
-                                        <td class="px-4 py-4 text-right">320<br/><span class="text-sm text-secondary">klg</span></td>
-                                        <td class="px-4 py-4">
-                                            <div class="flex items-center gap-2 justify-center">
-                                                <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                                                    <div class="bg-secondary w-[15%] h-full"></div>
-                                                </div>
-                                                <span class="font-bold">15%</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-4 text-right font-bold text-on-surface">Rp<br/>5.7M</td>
-                                    </tr>
-                                    <tr class="hover:bg-surface-container-low transition-colors">
-                                        <td class="px-4 py-4 font-bold text-on-surface">Lain-lain</td>
-                                        <td class="px-4 py-4 text-right">-</td>
-                                        <td class="px-4 py-4">
-                                            <div class="flex items-center gap-2 justify-center">
-                                                <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                                                    <div class="bg-outline w-[10%] h-full"></div>
-                                                </div>
-                                                <span class="font-bold">10%</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-4 text-right font-bold text-on-surface">Rp<br/>3.9M</td>
+                                    <tr v-for="kat in props.labaPerKategori" :key="kat.category_name" class="hover:bg-surface-container-low transition-colors">
+                                        <td class="px-4 py-4 font-bold text-on-surface">{{ kat.category_name }}</td>
+                                        <td class="px-4 py-4 text-right">{{ formatShortRupiah(kat.total_revenue) }}</td>
+                                        <td class="px-4 py-4 text-right font-bold text-on-surface">{{ formatShortRupiah(kat.total_profit) }}</td>
                                     </tr>
                                 </tbody>
                             </table>

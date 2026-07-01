@@ -1,10 +1,58 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+
+const props = defineProps({
+    products: Array,
+});
 
 const showConfirmationModal = ref(false);
 const showReceiptModal = ref(false);
 const selectedPaymentMethod = ref('Cash');
+const searchQuery = ref('');
+const cart = ref([]);
+const discount = ref(0);
+const isSubmitting = ref(false);
+
+const filteredProducts = computed(() => {
+    if (!searchQuery.value) return props.products || [];
+    const query = searchQuery.value.toLowerCase();
+    return props.products.filter(p => 
+        p.name.toLowerCase().includes(query) || 
+        p.category.toLowerCase().includes(query)
+    );
+});
+
+const addToCart = (product) => {
+    const existing = cart.value.find(item => item.product_id === product.id);
+    if (existing) {
+        existing.qty++;
+    } else {
+        cart.value.push({
+            product_id: product.id,
+            name: product.name,
+            qty: 1,
+            unit_name: product.base_unit,
+            price: product.selling_price_per_base_unit,
+        });
+    }
+};
+
+const removeFromCart = (index) => {
+    cart.value.splice(index, 1);
+};
+
+const subtotal = computed(() => {
+    return cart.value.reduce((total, item) => total + (item.qty * item.price), 0);
+});
+
+const totalAmount = computed(() => {
+    return Math.max(0, subtotal.value - (discount.value || 0));
+});
+
+const formatRupiah = (number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
+};
 
 const openConfirmation = () => {
     showConfirmationModal.value = true;
@@ -14,13 +62,33 @@ const closeConfirmation = () => {
     showConfirmationModal.value = false;
 };
 
-const openReceipt = () => {
-    showConfirmationModal.value = false;
-    showReceiptModal.value = true;
+const confirmPayment = () => {
+    if (cart.value.length === 0) return;
+    
+    isSubmitting.value = true;
+    router.post('/kasir/store', {
+        items: cart.value.map(item => ({
+            product_id: item.product_id,
+            qty: item.qty,
+            unit_name: item.unit_name
+        })),
+        payment_method: selectedPaymentMethod.value,
+        discount_amount: discount.value || 0
+    }, {
+        onSuccess: () => {
+            openReceipt();
+            // Cart will be cleared on modal close
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
+        }
+    });
 };
 
 const closeReceipt = () => {
     showReceiptModal.value = false;
+    cart.value = [];
+    discount.value = 0;
 };
 
 const handleKeydown = (event) => {
@@ -57,7 +125,7 @@ onUnmounted(() => {
             </div>
             <div class="flex items-center gap-base">
                 <div class="flex flex-col items-end mr-4">
-                    <p class="text-label-md text-on-surface-variant">Operator: Budi Santoso</p>
+                    <p class="text-label-md text-on-surface-variant">Kasir</p>
                     <p class="text-xs text-outline">Terminal: POS-01</p>
                 </div>
                 <div class="size-10 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant">
@@ -74,9 +142,8 @@ onUnmounted(() => {
                     <div class="flex gap-2 mb-gutter">
                         <div class="relative flex-grow">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-                            <input class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari produk inventori..." type="text"/>
+                            <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari produk inventori..." type="text"/>
                         </div>
-                        <button class="h-12 px-6 bg-primary text-on-primary rounded-lg font-bold hover:bg-primary-container transition-all shadow-md active:translate-y-[1px]">CARI</button>
                     </div>
                     
                     <div class="flex-grow overflow-y-auto bg-surface-container-lowest rounded-xl border border-outline-variant custom-scrollbar">
@@ -84,58 +151,20 @@ onUnmounted(() => {
                             <h3 class="text-label-xl font-bold text-on-surface uppercase tracking-wider">Produk Inventori</h3>
                         </div>
                         <div class="divide-y divide-outline-variant">
-                            <div class="p-4 hover:bg-surface-bright transition-colors flex items-center gap-4 group">
-                                <div class="size-16 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                                    <span class="material-symbols-outlined text-outline">inventory_2</span>
-                                </div>
-                                <div class="flex-grow">
-                                    <p class="text-body-lg font-bold text-on-surface">Semen Tiga Roda 40kg</p>
-                                    <p class="text-xs text-outline">SKU: TR-PC-40KG</p>
-                                    <p class="text-body-md font-bold text-primary mt-1">Rp 68.500</p>
-                                </div>
-                                <button class="size-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:translate-y-[1px]">
-                                    <span class="material-symbols-outlined">add</span>
-                                </button>
+                            <div v-if="filteredProducts.length === 0" class="p-8 text-center text-secondary">
+                                Tidak ada produk ditemukan.
                             </div>
-                            
-                            <div class="p-4 hover:bg-surface-bright transition-colors flex items-center gap-4 group">
-                                <div class="size-16 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                                    <span class="material-symbols-outlined text-outline">architecture</span>
+                            <div v-for="product in filteredProducts" :key="product.id" class="p-4 hover:bg-surface-bright transition-colors flex items-center gap-4 group">
+                                <div class="size-16 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant overflow-hidden">
+                                    <img v-if="product.photo_url" :src="product.photo_url" class="w-full h-full object-cover" />
+                                    <span v-else class="material-symbols-outlined text-outline">inventory_2</span>
                                 </div>
                                 <div class="flex-grow">
-                                    <p class="text-body-lg font-bold text-on-surface">Bata Ringan Hebel</p>
-                                    <p class="text-xs text-outline">SKU: HB-75-60</p>
-                                    <p class="text-body-md font-bold text-primary mt-1">Rp 12.500</p>
+                                    <p class="text-body-lg font-bold text-on-surface">{{ product.name }}</p>
+                                    <p class="text-xs text-outline">Stok: {{ product.stock_qty_base_unit }} {{ product.base_unit }} | Kat: {{ product.category }}</p>
+                                    <p class="text-body-md font-bold text-primary mt-1">{{ formatRupiah(product.selling_price_per_base_unit) }}</p>
                                 </div>
-                                <button class="size-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:translate-y-[1px]">
-                                    <span class="material-symbols-outlined">add</span>
-                                </button>
-                            </div>
-                            
-                            <div class="p-4 hover:bg-surface-bright transition-colors flex items-center gap-4 group">
-                                <div class="size-16 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                                    <span class="material-symbols-outlined text-outline">build</span>
-                                </div>
-                                <div class="flex-grow">
-                                    <p class="text-body-lg font-bold text-on-surface">Paku Kayu 3 Inch</p>
-                                    <p class="text-xs text-outline">SKU: PK-03-BX</p>
-                                    <p class="text-body-md font-bold text-primary mt-1">Rp 45.000</p>
-                                </div>
-                                <button class="size-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:translate-y-[1px]">
-                                    <span class="material-symbols-outlined">add</span>
-                                </button>
-                            </div>
-                            
-                            <div class="p-4 hover:bg-surface-bright transition-colors flex items-center gap-4 group">
-                                <div class="size-16 rounded bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                                    <span class="material-symbols-outlined text-outline">format_paint</span>
-                                </div>
-                                <div class="flex-grow">
-                                    <p class="text-body-lg font-bold text-on-surface">Cat Jotun Jotashield</p>
-                                    <p class="text-xs text-outline">SKU: JT-JS-WH-25</p>
-                                    <p class="text-body-md font-bold text-primary mt-1">Rp 245.000</p>
-                                </div>
-                                <button class="size-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:translate-y-[1px]">
+                                <button @click="addToCart(product)" class="size-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:translate-y-[1px]">
                                     <span class="material-symbols-outlined">add</span>
                                 </button>
                             </div>
@@ -152,18 +181,22 @@ onUnmounted(() => {
                     </div>
                     
                     <div class="flex-grow overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                        <div class="p-3 bg-surface-container-lowest rounded border border-outline-variant">
-                            <p class="text-sm font-bold text-on-surface">Pipa PVC Wavin 3/4"</p>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-xs text-outline">2x Rp 25.000</span>
-                                <span class="text-sm font-bold text-primary">Rp 50.000</span>
-                            </div>
+                        <div v-if="cart.length === 0" class="text-center text-secondary py-8 text-sm">
+                            Keranjang kosong
                         </div>
-                        <div class="p-3 bg-surface-container-lowest rounded border border-outline-variant">
-                            <p class="text-sm font-bold text-on-surface">Cat Nippon Weatherbond</p>
+                        <div v-for="(item, index) in cart" :key="index" class="p-3 bg-surface-container-lowest rounded border border-outline-variant">
+                            <div class="flex justify-between items-start">
+                                <p class="text-sm font-bold text-on-surface truncate pr-2 flex-grow">{{ item.name }}</p>
+                                <button @click="removeFromCart(index)" class="text-error hover:text-error/80">
+                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                </button>
+                            </div>
                             <div class="flex justify-between items-center mt-1">
-                                <span class="text-xs text-outline">1x Rp 120.000</span>
-                                <span class="text-sm font-bold text-primary">Rp 120.000</span>
+                                <div class="flex items-center gap-2">
+                                    <input v-model.number="item.qty" type="number" min="1" class="w-16 h-7 bg-surface border border-outline rounded px-1 text-center text-sm focus:ring-1 focus:ring-primary focus:outline-none" />
+                                    <span class="text-xs text-outline">x {{ formatRupiah(item.price) }}</span>
+                                </div>
+                                <span class="text-sm font-bold text-primary">{{ formatRupiah(item.qty * item.price) }}</span>
                             </div>
                         </div>
                     </div>
@@ -171,15 +204,15 @@ onUnmounted(() => {
                     <div class="p-4 bg-surface-container-lowest border-t border-outline-variant space-y-2">
                         <div class="flex justify-between text-label-md text-on-surface-variant">
                             <span>Subtotal</span>
-                            <span>Rp 170.000</span>
+                            <span>{{ formatRupiah(subtotal) }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-4 py-1">
                             <label class="text-label-md text-on-surface-variant whitespace-nowrap">Diskon (Rp)</label>
-                            <input class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" placeholder="0" type="number" value="0"/>
+                            <input v-model.number="discount" class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" placeholder="0" type="number" min="0"/>
                         </div>
                         <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-dashed border-outline-variant">
                             <span class="text-label-xl font-bold text-on-surface">TOTAL</span>
-                            <span class="text-headline-md text-primary font-bold">Rp 170.000</span>
+                            <span class="text-headline-md text-primary font-bold">{{ formatRupiah(totalAmount) }}</span>
                         </div>
                         
                         <div class="mt-4 space-y-2">
@@ -200,7 +233,7 @@ onUnmounted(() => {
                             </div>
                         </div>
                         
-                        <button class="w-full h-14 mt-4 bg-primary text-on-primary rounded-lg text-label-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container shadow-lg active:translate-y-[1px] transition-all" @click="openConfirmation">
+                        <button class="w-full h-14 mt-4 bg-primary text-on-primary rounded-lg text-label-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container shadow-lg active:translate-y-[1px] transition-all disabled:opacity-50 disabled:cursor-not-allowed" @click="openConfirmation" :disabled="cart.length === 0">
                             <span class="material-symbols-outlined">payments</span> BAYAR (F12)
                         </button>
                     </div>
@@ -222,15 +255,15 @@ onUnmounted(() => {
                         <div class="space-y-2">
                             <div class="flex justify-between text-body-md text-on-surface-variant">
                                 <span>Subtotal</span>
-                                <span>Rp 170.000</span>
+                                <span>{{ formatRupiah(subtotal) }}</span>
                             </div>
                             <div class="flex justify-between text-body-md text-on-surface-variant">
                                 <span>Diskon</span>
-                                <span>Rp 0</span>
+                                <span>{{ formatRupiah(discount) }}</span>
                             </div>
                             <div class="flex justify-between items-center pt-3 border-t border-dashed border-outline-variant">
                                 <span class="text-label-md font-bold text-on-surface">TOTAL AKHIR</span>
-                                <span class="text-headline-md text-primary font-bold">Rp 170.000</span>
+                                <span class="text-headline-md text-primary font-bold">{{ formatRupiah(totalAmount) }}</span>
                             </div>
                         </div>
                         <div class="p-3 bg-surface-container-low rounded border border-outline-variant flex items-center gap-2">
@@ -239,7 +272,10 @@ onUnmounted(() => {
                         </div>
                         <div class="flex gap-3 pt-2">
                             <button class="flex-1 h-12 border border-outline-variant bg-surface-container-low text-on-surface-variant rounded font-bold hover:bg-surface-container-high transition-all active:translate-y-[1px]" @click="closeConfirmation">Batal</button>
-                            <button class="flex-1 h-12 bg-primary text-on-primary rounded font-bold shadow-md hover:bg-primary-container transition-all active:translate-y-[1px]" @click="openReceipt">Konfirmasi &amp; Cetak</button>
+                            <button class="flex-1 h-12 bg-primary text-on-primary rounded font-bold shadow-md hover:bg-primary-container transition-all active:translate-y-[1px] flex justify-center items-center gap-2" @click="confirmPayment" :disabled="isSubmitting">
+                                <span v-if="isSubmitting" class="material-symbols-outlined animate-spin">progress_activity</span>
+                                Konfirmasi &amp; Cetak
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -256,29 +292,26 @@ onUnmounted(() => {
                         <p class="text-[10px]">Jl. Industri No. 45, Jakarta</p>
                     </div>
                     <div class="space-y-2 text-xs mb-4">
-                        <div class="flex justify-between">
-                            <span>Pipa PVC Wavin 3/4"</span>
-                            <span>50.000</span>
-                        </div>
-                        <div class="pl-4 italic">2 x 25.000</div>
-                        <div class="flex justify-between">
-                            <span>Cat Nippon Weatherbond</span>
-                            <span>120.000</span>
-                        </div>
-                        <div class="pl-4 italic">1 x 120.000</div>
+                        <template v-for="(item, idx) in cart" :key="idx">
+                            <div class="flex justify-between">
+                                <span>{{ item.name }}</span>
+                                <span>{{ (item.qty * item.price).toLocaleString('id-ID') }}</span>
+                            </div>
+                            <div class="pl-4 italic">{{ item.qty }} x {{ item.price.toLocaleString('id-ID') }}</div>
+                        </template>
                     </div>
                     <div class="border-t border-dashed border-gray-300 pt-4 space-y-1 text-sm">
                         <div class="flex justify-between">
                             <span>SUBTOTAL</span>
-                            <span>170.000</span>
+                            <span>{{ subtotal.toLocaleString('id-ID') }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>DISKON</span>
-                            <span>0</span>
+                            <span>{{ discount.toLocaleString('id-ID') }}</span>
                         </div>
                         <div class="flex justify-between font-bold text-lg pt-2">
                             <span>TOTAL</span>
-                            <span>Rp 170.000</span>
+                            <span>{{ formatRupiah(totalAmount) }}</span>
                         </div>
                     </div>
                     <div class="mt-6 text-center text-[10px] text-gray-500">

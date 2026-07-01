@@ -2,6 +2,12 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
+const props = defineProps({
+    auth: Object,
+    transactions: Object,
+    filters: Object,
+});
+
 // Toast state
 const toastMessage = ref('');
 const showToast = ref(false);
@@ -118,8 +124,8 @@ const handleLogout = () => {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
-                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -183,123 +189,35 @@ const handleLogout = () => {
                                     <th class="p-4 border-b border-outline-variant text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!-- Row 1 -->
-                                <tr class="hover:bg-primary-container/5 transition-colors group">
+                            <tbody v-if="props.transactions && props.transactions.data">
+                                <tr v-if="props.transactions.data.length === 0">
+                                    <td colspan="5" class="p-8 text-center text-secondary">Belum ada riwayat penjualan.</td>
+                                </tr>
+                                <tr v-for="txn in props.transactions.data" :key="txn.id" class="hover:bg-primary-container/5 transition-colors group">
                                     <td class="p-4 border-b border-outline-variant">
-                                        <p class="font-bold text-on-surface">TX-2410-0912</p>
-                                        <p class="text-[12px] text-secondary">14:22:10</p>
+                                        <p class="font-bold text-on-surface">TX-{{ txn.id.toString().padStart(6, '0') }}</p>
+                                        <p class="text-[12px] text-secondary">{{ txn.time }} | {{ txn.date }}</p>
                                     </td>
                                     <td class="p-4 border-b border-outline-variant">
                                         <div class="flex flex-wrap gap-1">
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Semen x5</span>
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Plywood 9mm x2</span>
+                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">{{ txn.items_summary }} ({{ txn.items_count }} item)</span>
                                         </div>
                                     </td>
-                                    <td class="p-4 font-bold text-on-surface border-b border-outline-variant">Rp 1.450.000</td>
+                                    <td class="p-4 font-bold text-on-surface border-b border-outline-variant">
+                                        {{ new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(txn.total) }}
+                                    </td>
                                     <td class="p-4 border-b border-outline-variant">
-                                        <span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
-                                            <span class="material-symbols-outlined text-[16px]">qr_code_2</span> QRIS
+                                        <span :class="[
+                                            'inline-flex items-center gap-1 px-3 py-1 rounded-full text-label-md font-label-md',
+                                            txn.payment_method === 'QRIS' ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-secondary-container'
+                                        ]">
+                                            <span class="material-symbols-outlined text-[16px]">{{ txn.payment_method === 'QRIS' ? 'qr_code_2' : 'payments' }}</span> {{ txn.payment_method }}
                                         </span>
                                     </td>
                                     <td class="p-4 text-right border-b border-outline-variant">
-                                        <button class="text-secondary hover:text-primary transition-colors">
+                                        <Link :href="`/penjualan/${txn.id}`" class="text-secondary hover:text-primary transition-colors">
                                             <span class="material-symbols-outlined">visibility</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <!-- Row 2 -->
-                                <tr class="hover:bg-primary-container/5 transition-colors group">
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <p class="font-bold text-on-surface">TX-2410-0911</p>
-                                        <p class="text-[12px] text-secondary">14:15:05</p>
-                                    </td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <div class="flex flex-wrap gap-1">
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Pipa PVC 3" x10</span>
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Lem Solvent x1</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 font-bold text-on-surface border-b border-outline-variant">Rp 820.000</td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <span class="inline-flex items-center gap-1 bg-surface-container-high text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
-                                            <span class="material-symbols-outlined text-[16px]">payments</span> Tunai
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-right border-b border-outline-variant">
-                                        <button class="text-secondary hover:text-primary transition-colors">
-                                            <span class="material-symbols-outlined">visibility</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <!-- Row 3 -->
-                                <tr class="hover:bg-primary-container/5 transition-colors group">
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <p class="font-bold text-on-surface">TX-2410-0910</p>
-                                        <p class="text-[12px] text-secondary">14:02:44</p>
-                                    </td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <div class="flex flex-wrap gap-1">
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Pasir 1m3 x1</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 font-bold text-on-surface border-b border-outline-variant">Rp 350.000</td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <span class="inline-flex items-center gap-1 bg-surface-container-high text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
-                                            <span class="material-symbols-outlined text-[16px]">payments</span> Tunai
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-right border-b border-outline-variant">
-                                        <button class="text-secondary hover:text-primary transition-colors">
-                                            <span class="material-symbols-outlined">visibility</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <!-- Row 4 -->
-                                <tr class="hover:bg-primary-container/5 transition-colors group">
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <p class="font-bold text-on-surface">TX-2410-0909</p>
-                                        <p class="text-[12px] text-secondary">13:50:12</p>
-                                    </td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <div class="flex flex-wrap gap-1">
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Besi Beton 12mm x50</span>
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Kawat Ikat x2</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 font-bold text-on-surface border-b border-outline-variant">Rp 6.120.000</td>
-                                    <td class="p-4 border-b border-outline-variant">
-                                        <span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
-                                            <span class="material-symbols-outlined text-[16px]">qr_code_2</span> QRIS
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-right border-b border-outline-variant">
-                                        <button class="text-secondary hover:text-primary transition-colors">
-                                            <span class="material-symbols-outlined">visibility</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <!-- Row 5 -->
-                                <tr class="hover:bg-primary-container/5 transition-colors group">
-                                    <td class="p-4">
-                                        <p class="font-bold text-on-surface">TX-2410-0908</p>
-                                        <p class="text-[12px] text-secondary">13:45:33</p>
-                                    </td>
-                                    <td class="p-4">
-                                        <div class="flex flex-wrap gap-1">
-                                            <span class="bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant text-[12px]">Genteng x200</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 font-bold text-on-surface">Rp 2.400.000</td>
-                                    <td class="p-4">
-                                        <span class="inline-flex items-center gap-1 bg-surface-container-high text-on-secondary-container px-3 py-1 rounded-full text-label-md font-label-md">
-                                            <span class="material-symbols-outlined text-[16px]">payments</span> Tunai
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-right">
-                                        <button class="text-secondary hover:text-primary transition-colors">
-                                            <span class="material-symbols-outlined">visibility</span>
-                                        </button>
+                                        </Link>
                                     </td>
                                 </tr>
                             </tbody>

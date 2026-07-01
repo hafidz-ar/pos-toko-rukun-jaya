@@ -2,6 +2,12 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
+const props = defineProps({
+    auth: Object,
+    users: Array,
+    categories: Array,
+});
+
 // Toast state
 const toastMessage = ref('');
 const showToast = ref(false);
@@ -106,8 +112,8 @@ const activeTab = ref('profil-toko');
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
                         <div>
-                            <p class="text-label-md font-label-md leading-none">Staf Admin</p>
-                            <p class="text-xs text-secondary mt-1">Gudang Utama</p>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
                     <!-- Logout button on desktop -->
@@ -225,41 +231,26 @@ const activeTab = ref('profil-toko');
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-outline-variant">
-                                        <tr class="hover:bg-surface-container-low transition-colors">
-                                            <td class="px-6 py-5">
-                                                <div class="font-bold">Budi Santoso</div>
-                                                <div class="text-[12px] text-secondary">budi.admin@tokomat.com</div>
-                                            </td>
-                                            <td class="px-6 py-5"><span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-[12px] font-bold">Administrator</span></td>
-                                            <td class="px-6 py-5"><span class="flex items-center space-x-1 text-green-600"><span class="w-2 h-2 rounded-full bg-green-600"></span> <span>Aktif</span></span></td>
-                                            <td class="px-6 py-5">
-                                                <div class="flex items-center space-x-4">
-                                                    <button class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit">edit</button>
-                                                    <button class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Hapus">delete</button>
-                                                </div>
-                                            </td>
+                                        <tr v-if="!props.users || props.users.length === 0">
+                                            <td colspan="4" class="px-6 py-8 text-center text-secondary">Belum ada user terdaftar.</td>
                                         </tr>
-                                        <tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+                                        <tr v-for="(user, index) in props.users" :key="user.id" :class="['hover:bg-surface-container-low transition-colors', index % 2 !== 0 ? 'bg-surface-container-lowest' : '']">
                                             <td class="px-6 py-5">
-                                                <div class="font-bold">Siti Aminah</div>
-                                                <div class="text-[12px] text-secondary">siti.kasir@tokomat.com</div>
+                                                <div class="font-bold">{{ user.name }}</div>
+                                                <div class="text-[12px] text-secondary">@{{ user.username }}</div>
                                             </td>
-                                            <td class="px-6 py-5"><span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant rounded-full text-[12px] font-bold">Kasir Senior</span></td>
-                                            <td class="px-6 py-5"><span class="flex items-center space-x-1 text-green-600"><span class="w-2 h-2 rounded-full bg-green-600"></span> <span>Aktif</span></span></td>
                                             <td class="px-6 py-5">
-                                                <div class="flex items-center space-x-4">
-                                                    <button class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit">edit</button>
-                                                    <button class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Hapus">delete</button>
-                                                </div>
+                                                <span :class="[
+                                                    'px-3 py-1 rounded-full text-[12px] font-bold',
+                                                    user.role === 'owner' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-secondary-fixed text-on-secondary-fixed-variant'
+                                                ]">{{ user.role === 'owner' ? 'Owner / Admin' : 'Karyawan' }}</span>
                                             </td>
-                                        </tr>
-                                        <tr class="hover:bg-surface-container-low transition-colors">
                                             <td class="px-6 py-5">
-                                                <div class="font-bold">Agus Pratama</div>
-                                                <div class="text-[12px] text-secondary">agus.stock@tokomat.com</div>
+                                                <span :class="['flex items-center space-x-1', user.is_active ? 'text-green-600' : 'text-error']">
+                                                    <span :class="['w-2 h-2 rounded-full', user.is_active ? 'bg-green-600' : 'bg-error']"></span> 
+                                                    <span>{{ user.is_active ? 'Aktif' : 'Non-aktif' }}</span>
+                                                </span>
                                             </td>
-                                            <td class="px-6 py-5"><span class="px-3 py-1 bg-surface-variant text-on-surface-variant rounded-full text-[12px] font-bold">Staf Gudang</span></td>
-                                            <td class="px-6 py-5"><span class="flex items-center space-x-1 text-secondary"><span class="w-2 h-2 rounded-full bg-secondary"></span> <span>Off Duty</span></span></td>
                                             <td class="px-6 py-5">
                                                 <div class="flex items-center space-x-4">
                                                     <button class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit">edit</button>

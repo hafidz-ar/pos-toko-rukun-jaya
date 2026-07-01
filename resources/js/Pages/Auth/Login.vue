@@ -14,16 +14,10 @@ const togglePassword = () => {
 };
 
 const handleLogin = () => {
-    // In a real application, you would post to a login route
-    // form.post(route('login'));
-    
-    // Simulate successful login
-    form.processing = true;
-    setTimeout(() => {
-        form.processing = false;
-        console.log("Authentication successful for ID:", form.username);
-        router.visit('/dashboard');
-    }, 1200);
+    form.post('/login', {
+        preserveScroll: true,
+        onError: () => form.reset('password'),
+    });
 };
 </script>
 
@@ -57,6 +51,12 @@ const handleLogin = () => {
                 </header>
                 
                 <form class="space-y-4 md:space-y-5 mt-6" @submit.prevent="handleLogin">
+                    <!-- Error Message -->
+                    <div v-if="form.errors.username" class="bg-error-container text-on-error-container text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+                        <span class="material-symbols-outlined text-error">error</span>
+                        {{ form.errors.username }}
+                    </div>
+
                     <!-- ID Pengguna Input -->
                     <div class="flex flex-col space-y-1.5">
                         <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider" for="username">

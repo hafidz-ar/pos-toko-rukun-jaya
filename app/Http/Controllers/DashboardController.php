@@ -14,6 +14,11 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Dashboard is Owner-only (PRD 3.7 — contains financial data)
+        if ($request->user()->isKaryawan()) {
+            return redirect()->route('kasir');
+        }
+
         $period = $request->get('period', 'minggu'); // harian, minggu, bulan
         $now = Carbon::now();
 

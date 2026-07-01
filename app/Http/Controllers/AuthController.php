@@ -46,7 +46,9 @@ class AuthController extends Controller
                 ]);
             }
 
-            return redirect()->intended(route('dashboard'));
+            // Role-based redirect: Owner → Dashboard, Karyawan → Kasir (PRD 3.7)
+            $defaultRoute = $user->isOwner() ? route('dashboard') : route('kasir');
+            return redirect()->intended($defaultRoute);
         }
 
         return back()->withErrors([

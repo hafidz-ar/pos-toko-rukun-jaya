@@ -10,15 +10,16 @@ use App\Models\User;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class RestockController extends Controller
 {
     /**
-     * Get restock history for a product.
+     * Display restock page with products and restock history.
      */
     public function index(Request $request)
     {
-        $query = Restock::with(['product', 'user']);
+        $query = Restock::with(['product.category', 'user']);
 
         if ($productId = $request->get('product_id')) {
             $query->where('product_id', $productId);
@@ -30,7 +31,9 @@ class RestockController extends Controller
             ->map(fn ($r) => [
                 'id' => $r->id,
                 'product_name' => $r->product->name,
+                'product_category' => $r->product->category->name ?? '-',
                 'qty_base_unit' => (float) $r->qty_base_unit,
+                'base_unit' => $r->product->base_unit,
                 'unit_name' => $r->unit_name_at_restock,
                 'hpp' => (float) $r->cost_price_per_base_unit_at_restock,
                 'location' => $r->location,
@@ -38,7 +41,38 @@ class RestockController extends Controller
                 'datetime' => $r->restocked_at->format('d/m/Y H:i'),
             ]);
 
-        return response()->json($restocks);
+        // Products with units for the restock form
+        $products = Product::with(['category', 'units'])
+            ->active()
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'category' => $p->category->name,
+                'base_unit' => $p->base_unit,
+                'cost_price_per_base_unit' => (float) $p->cost_price_per_base_unit,
+                'stock_qty_base_unit' => (float) $p->stock_qty_base_unit,
+                'location' => $p->location,
+                'units' => $p->units->map(fn ($u) => [
+                    'id' => $u->id,
+                    'unit_name' => $u->unit_name,
+                    'conversion_factor' => (float) $u->conversion_factor,
+                ]),
+            ]);
+
+        // JSON response for AJAX/polling
+        if ($request->wantsJson()) {
+            return response()->json([
+                'restocks' => $restocks,
+                'products' => $products,
+            ]);
+        }
+
+        return Inertia::render('Restock', [
+            'restocks' => $restocks,
+            'products' => $products,
+        ]);
     }
 
     /**
