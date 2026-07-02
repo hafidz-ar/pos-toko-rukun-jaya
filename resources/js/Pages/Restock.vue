@@ -235,6 +235,7 @@ const formatRupiah = (number) => {
 
                 <!-- Reports Tab -->
                 <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
                     href="/laporan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
@@ -244,6 +245,7 @@ const formatRupiah = (number) => {
 
                 <!-- Settings Tab -->
                 <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
                     href="/pengaturan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >

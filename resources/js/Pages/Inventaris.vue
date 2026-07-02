@@ -317,11 +317,11 @@ const closeMovements = () => {
                     <span class="material-symbols-outlined">point_of_sale</span>
                     <span>Penjualan</span>
                 </Link>
-                <Link href="/laporan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
+                <Link v-if="props.auth?.user?.role === 'owner'" href="/laporan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Laporan</span>
                 </Link>
-                <Link href="/pengaturan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
+                <Link v-if="props.auth?.user?.role === 'owner'" href="/pengaturan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">settings</span>
                     <span>Pengaturan</span>
                 </Link>

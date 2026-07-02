@@ -199,6 +199,7 @@ const openOwnerMenu = (menuName, path) => {
 
                 <!-- Reports Tab -->
                 <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
                     href="/laporan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
@@ -208,6 +209,7 @@ const openOwnerMenu = (menuName, path) => {
 
                 <!-- Settings Tab -->
                 <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
                     href="/pengaturan"
                     class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
                 >
@@ -296,7 +298,7 @@ const openOwnerMenu = (menuName, path) => {
                     </button>
                 </div>
 
-                <div class="lg:col-span-6 group">
+                <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-6 group">
                     <button 
                         @click="router.visit('/laporan')"
                         class="w-full h-full text-left bg-surface-container-lowest border-2 border-outline-variant hover:border-primary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
@@ -313,7 +315,7 @@ const openOwnerMenu = (menuName, path) => {
                     </button>
                 </div>
 
-                <div class="lg:col-span-6 group">
+                <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-6 group">
                     <button 
                         @click="router.visit('/pengaturan')"
                         class="w-full h-full text-left bg-surface-container-lowest border-2 border-outline-variant hover:border-primary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
@@ -331,7 +333,7 @@ const openOwnerMenu = (menuName, path) => {
                 </div>
 
                 <!-- Quick Stats Section -->
-                <div class="lg:col-span-12 mt-4">
+                <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-12 mt-4">
                     <div class="bg-surface-container p-6 rounded-xl border border-outline-variant flex flex-col md:flex-row items-center justify-between gap-6">
                         
                         <!-- Transaksi Hari Ini -->
@@ -375,7 +377,7 @@ const openOwnerMenu = (menuName, path) => {
                 </div>
 
                 <!-- Sales Trend History Section (Interactive SVG) -->
-                <div class="lg:col-span-12 mt-8">
+                <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-12 mt-8">
                     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 relative">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-headline-md font-headline-md text-on-background">Tren Penjualan (7 Hari Terakhir)</h3>

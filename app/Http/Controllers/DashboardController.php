@@ -14,11 +14,8 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Dashboard is Owner-only (PRD 3.7 — contains financial data)
-        if ($request->user()->isKaryawan()) {
-            return redirect()->route('kasir');
-        }
-
+        $user = $request->user();
+        $isKaryawan = $user->isKaryawan();
         $period = $request->get('period', 'minggu'); // harian, minggu, bulan
         $now = Carbon::now();
 
@@ -39,44 +36,49 @@ class DashboardController extends Controller
                 break;
         }
 
-        // 1. Total Omset (periode berjalan)
-        $totalOmset = Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
+        // 1. Total Omset (periode berjalan) — Owner-only
+        $totalOmset = $isKaryawan ? 0 : Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
             ->sum('total_amount');
 
-        // 2. Jumlah Transaksi (periode berjalan)
-        $jumlahTransaksi = Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
+        // 2. Jumlah Transaksi (periode berjalan) — Owner-only
+        $jumlahTransaksi = $isKaryawan ? 0 : Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
             ->count();
 
-        // 3. Laba Kotor
-        $transactionItems = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate) {
-            $q->whereBetween('transaction_datetime', [$startDate, $endDate]);
-        })->with('product.category')->get();
+        // 3. Laba Kotor — Owner-only
+        $totalLabaKotor = 0;
+        $labaPerProduk = collect();
+        $labaPerKategori = collect();
+        if (!$isKaryawan) {
+            $transactionItems = TransactionItem::whereHas('transaction', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('transaction_datetime', [$startDate, $endDate]);
+            })->with('product.category')->get();
 
-        $totalLabaKotor = $transactionItems->sum(function ($item) {
-            return $item->profit;
-        });
+            $totalLabaKotor = $transactionItems->sum(function ($item) {
+                return $item->profit;
+            });
 
-        // 3a. Breakdown per produk
-        $labaPerProduk = $transactionItems->groupBy('product_id')->map(function ($items) {
-            $first = $items->first();
-            return [
-                'product_id' => $first->product_id,
-                'product_name' => $first->product?->name ?? 'Produk Dihapus',
-                'total_revenue' => $items->sum(fn ($i) => $i->subtotal),
-                'total_profit' => $items->sum(fn ($i) => $i->profit),
-                'total_qty' => $items->sum(fn ($i) => $i->qty_in_base_unit),
-            ];
-        })->sortByDesc('total_profit')->values()->take(10);
+            // 3a. Breakdown per produk
+            $labaPerProduk = $transactionItems->groupBy('product_id')->map(function ($items) {
+                $first = $items->first();
+                return [
+                    'product_id' => $first->product_id,
+                    'product_name' => $first->product?->name ?? 'Produk Dihapus',
+                    'total_revenue' => $items->sum(fn ($i) => $i->subtotal),
+                    'total_profit' => $items->sum(fn ($i) => $i->profit),
+                    'total_qty' => $items->sum(fn ($i) => $i->qty_in_base_unit),
+                ];
+            })->sortByDesc('total_profit')->values()->take(10);
 
-        // 3b. Breakdown per kategori
-        $labaPerKategori = $transactionItems->groupBy(fn ($item) => $item->product?->category_id)->map(function ($items) {
-            $first = $items->first();
-            return [
-                'category_name' => $first->product?->category?->name ?? 'Tanpa Kategori',
-                'total_revenue' => $items->sum(fn ($i) => $i->subtotal),
-                'total_profit' => $items->sum(fn ($i) => $i->profit),
-            ];
-        })->sortByDesc('total_profit')->values();
+            // 3b. Breakdown per kategori
+            $labaPerKategori = $transactionItems->groupBy(fn ($item) => $item->product?->category_id)->map(function ($items) {
+                $first = $items->first();
+                return [
+                    'category_name' => $first->product?->category?->name ?? 'Tanpa Kategori',
+                    'total_revenue' => $items->sum(fn ($i) => $i->subtotal),
+                    'total_profit' => $items->sum(fn ($i) => $i->profit),
+                ];
+            })->sortByDesc('total_profit')->values();
+        }
 
         // 4. Stok Kritis
         $stokKritis = Product::active()->lowStock()
@@ -91,42 +93,48 @@ class DashboardController extends Controller
                 'threshold' => $p->min_stock_threshold,
             ]);
 
-        // 5. Indikator Rugi (transaksi merugi — should be 0)
-        $transaksiMerugi = Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
+        // 5. Indikator Rugi (transaksi merugi — should be 0) — Owner-only
+        $transaksiMerugi = $isKaryawan ? 0 : Transaction::whereBetween('transaction_datetime', [$startDate, $endDate])
             ->whereRaw('total_amount < (SELECT COALESCE(SUM(ti.cost_price_per_base_unit_at_transaction * ti.qty_in_selected_unit * ti.conversion_factor_at_transaction), 0) FROM transaction_items ti WHERE ti.transaction_id = transactions.id)')
             ->count();
 
-        // 6. Grafik penjualan rolling 7 hari terakhir (paling kanan adalah hari ini)
+        // 6. Grafik penjualan rolling 7 hari terakhir (paling kanan adalah hari ini) — Owner-only
         $chartData = [];
-        
-        $indonesianDays = [
-            'Sunday' => 'Min',
-            'Monday' => 'Sen',
-            'Tuesday' => 'Sel',
-            'Wednesday' => 'Rab',
-            'Thursday' => 'Kam',
-            'Friday' => 'Jum',
-            'Saturday' => 'Sab'
-        ];
-
-        for ($i = 6; $i >= 0; $i--) {
-            $day = $now->copy()->subDays($i);
-            $dayOmset = Transaction::whereDate('transaction_datetime', $day->toDateString())
-                ->sum('total_amount');
-
-            $dayName = $indonesianDays[$day->format('l')] ?? substr($day->format('D'), 0, 3);
-
-            $chartData[] = [
-                'day' => $dayName,
-                'date' => $day->format('d/m'),
-                'amount' => (float) $dayOmset,
+        if (!$isKaryawan) {
+            $indonesianDays = [
+                'Sunday' => 'Min',
+                'Monday' => 'Sen',
+                'Tuesday' => 'Sel',
+                'Wednesday' => 'Rab',
+                'Thursday' => 'Kam',
+                'Friday' => 'Jum',
+                'Saturday' => 'Sab'
             ];
+
+            for ($i = 6; $i >= 0; $i--) {
+                $day = $now->copy()->subDays($i);
+                $dayOmset = Transaction::whereDate('transaction_datetime', $day->toDateString())
+                    ->sum('total_amount');
+
+                $dayName = $indonesianDays[$day->format('l')] ?? substr($day->format('D'), 0, 3);
+
+                $chartData[] = [
+                    'day' => $dayName,
+                    'date' => $day->format('d/m'),
+                    'amount' => (float) $dayOmset,
+                ];
+            }
         }
 
-        // 7. Riwayat transaksi hari ini
-        $riwayatHariIni = Transaction::whereDate('transaction_datetime', $now->toDateString())
-            ->with(['cashier', 'items.product'])
-            ->orderByDesc('transaction_datetime')
+        // 7. Riwayat transaksi hari ini — Scoped by cashier for Karyawan
+        $riwayatQuery = Transaction::whereDate('transaction_datetime', $now->toDateString())
+            ->with(['cashier', 'items.product']);
+        
+        if ($isKaryawan) {
+            $riwayatQuery->where('cashier_user_id', $user->id);
+        }
+
+        $riwayatHariIni = $riwayatQuery->orderByDesc('transaction_datetime')
             ->limit(10)
             ->get()
             ->map(fn ($txn) => [
