@@ -32,13 +32,13 @@ const filteredProducts = computed(() => {
         result = result.filter(p => p.category === selectedCategory.value);
     }
 
-    // Search query (name, category, SKU)
+    // Search query (name, location, SKU)
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase();
         result = result.filter(p => {
             const sku = 'sku-' + p.id.toString().padStart(4, '0');
             return p.name.toLowerCase().includes(query) ||
-                p.category.toLowerCase().includes(query) ||
+                (p.location && p.location.toLowerCase().includes(query)) ||
                 sku.includes(query);
         });
     }
@@ -286,7 +286,7 @@ onUnmounted(() => {
                     <div class="flex gap-3 mb-gutter">
                         <div class="relative flex-grow">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-                            <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari berdasarkan nama, kategori, atau SKU..." type="text"/>
+                            <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari berdasarkan nama, lokasi, atau SKU..." type="text"/>
                         </div>
                         <div class="relative shrink-0 w-52">
                             <select v-model="selectedCategory" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none cursor-pointer">

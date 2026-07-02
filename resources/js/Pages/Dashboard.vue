@@ -45,7 +45,7 @@ const chartPoints = computed(() => {
             amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(d.amount),
             rawAmount: d.amount,
             x: (index / Math.max(1, data.length - 1)) * 700,
-            y: 180 - ((d.amount / maxAmount) * 140) // 180 max y down, 40 min y up
+            y: 200 - ((d.amount / maxAmount) * 200) // 200 max y down (Rp 0), 0 min y up (Rp max)
         };
     });
 });
@@ -390,12 +390,12 @@ const openOwnerMenu = (menuName, path) => {
                         <!-- Chart with Y-Axis and SVG Area -->
                         <div class="flex gap-4 h-64 w-full relative select-none">
                             <!-- Y-axis Labels -->
-                            <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pb-1 pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[80px] select-none">
-                                <span>{{ chartMaxAmount }}</span>
+                            <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[80px] select-none">
+                                <span class="h-0 flex items-center justify-end">{{ chartMaxAmount }}</span>
                                 <span></span>
                                 <span></span>
                                 <span></span>
-                                <span>Rp 0</span>
+                                <span class="h-0 flex items-center justify-end">Rp 0</span>
                             </div>
 
                             <!-- SVG Chart Area -->
@@ -409,7 +409,7 @@ const openOwnerMenu = (menuName, path) => {
                                     <div class="border-b border-outline-variant opacity-20 w-full"></div>
                                 </div>
 
-                                <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 700 200">
+                                <svg class="absolute inset-0 w-full h-full" style="overflow: visible;" preserveAspectRatio="none" viewBox="0 0 700 200">
                                     <!-- Area Path with Gradient -->
                                     <path v-if="chartPath" :d="chartPath + ' V200 H0 Z'" fill="url(#chartGradient)" opacity="0.1"></path>
                                     <!-- Line Path -->
@@ -447,7 +447,7 @@ const openOwnerMenu = (menuName, path) => {
 
                                         <!-- Small dot on line path -->
                                         <div 
-                                            class="absolute w-3 h-3 rounded-full border-2 border-surface bg-primary transition-all duration-150 pointer-events-none left-[14px]"
+                                            class="absolute w-3 h-3 rounded-full border-2 border-surface bg-primary transition-all duration-150 pointer-events-none left-1/2 -translate-x-1/2"
                                             :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 6px)` }"
                                             :class="{ 'scale-150 shadow-md ring-2 ring-primary-fixed': hoveredPoint && hoveredPoint.day === point.day }"
                                         ></div>
@@ -461,8 +461,15 @@ const openOwnerMenu = (menuName, path) => {
                             <!-- Spacer to align with Y-axis -->
                             <div class="w-[80px] shrink-0 border-r border-transparent"></div>
                             <!-- X-axis Labels -->
-                            <div class="flex-1 flex justify-between">
-                                <span v-for="point in chartPoints" :key="point.day">{{ point.day }}</span>
+                            <div class="flex-1 relative h-6">
+                                <span 
+                                    v-for="(point, idx) in chartPoints" 
+                                    :key="point.day" 
+                                    class="absolute text-secondary font-semibold -translate-x-1/2"
+                                    :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%` }"
+                                >
+                                    {{ point.day }}
+                                </span>
                             </div>
                         </div>
 

@@ -59,7 +59,7 @@ class TransactionController extends Controller
             ->where('stock_qty_base_unit', '>', 0)
             ->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
+                    ->orWhere('location', 'like', "%{$search}%");
                 
                 if (preg_match('/^(sku-)?(\d+)$/i', $search, $matches)) {
                     $id = (int)$matches[2];
