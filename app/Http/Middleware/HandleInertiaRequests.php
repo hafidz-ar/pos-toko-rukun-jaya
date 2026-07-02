@@ -37,7 +37,29 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+
+            'auth' => [
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'username' => $request->user()->username,
+                    'role' => $request->user()->role,
+                    'telegram_chat_id' => $request->user()->telegram_chat_id,
+                ] : null,
+            ],
+
+            'notifications' => [
+                'unread_count' => $request->user()
+                    ? \App\Models\Notification::where('recipient_user_id', $request->user()->id)
+                        ->where('is_read', false)
+                        ->count()
+                    : 0,
+            ],
+
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ];
     }
 }

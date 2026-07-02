@@ -2,15 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\Location;
-use App\Models\Member;
+use App\Models\Category;
+use App\Models\Notification;
 use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\StockMovement;
+use App\Models\ProductUnit;
+use App\Models\Restock;
 use App\Models\Transaction;
-use App\Models\TransactionDetail;
+use App\Models\TransactionItem;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,189 +20,510 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create Users
+        // ==============================
+        // 1. USERS
+        // ==============================
         $owner = User::create([
             'name' => 'Ci Ali',
+            'username' => 'ciali',
+            'password' => Hash::make('password123'),
             'role' => 'owner',
-            'pin' => '1111',
+            'is_active' => true,
         ]);
 
-        $cashier1 = User::create([
-            'name' => 'Budi',
-            'role' => 'cashier',
-            'pin' => '2222',
+        $karyawan1 = User::create([
+            'name' => 'Budi Santoso',
+            'username' => 'budi',
+            'password' => Hash::make('password123'),
+            'role' => 'karyawan',
+            'is_active' => true,
         ]);
 
-        $cashier2 = User::create([
-            'name' => 'Siti',
-            'role' => 'cashier',
-            'pin' => '3333',
+        $karyawan2 = User::create([
+            'name' => 'Siti Rahma',
+            'username' => 'siti',
+            'password' => Hash::make('password123'),
+            'role' => 'karyawan',
+            'is_active' => true,
         ]);
 
-        $users = [$owner, $cashier1, $cashier2];
+        $users = [$owner, $karyawan1, $karyawan2];
 
-        // 2. Create Locations
-        $locations = [
-            Location::create(['location_name' => 'Rak A1', 'description' => 'Rak pipa dan plastik depan']),
-            Location::create(['location_name' => 'Rak A2', 'description' => 'Rak paku dan perkakas']),
-            Location::create(['location_name' => 'Rak B1', 'description' => 'Rak cat tembok']),
-            Location::create(['location_name' => 'Rak B2', 'description' => 'Rak fittings pipa']),
-            Location::create(['location_name' => 'Gudang Belakang', 'description' => 'Penyimpanan semen dan besi beton']),
-            Location::create(['location_name' => 'Etalase Depan', 'description' => 'Barang kecil/aksesoris kuningan']),
+        // ==============================
+        // 2. CATEGORIES (Smallest to Largest Units)
+        // ==============================
+        $categories = [
+            'Aksesoris Rumah Tangga' => Category::create(['name' => 'Aksesoris Rumah Tangga', 'units' => 'buah, pcs, pack, lusin, box']),
+            'Bahan Bangunan' => Category::create(['name' => 'Bahan Bangunan', 'units' => 'pcs, batang, lembar, sak, kg, ton']),
+            'Sparepart Laptop' => Category::create(['name' => 'Sparepart Laptop', 'units' => 'pcs, box']),
         ];
 
-        // 3. Create Members
-        $members = Member::factory(5)->create();
-
-        // 4. Create Products and Variants
-        $productNames = [
-            'Pipa Paralon Maspion AW' => ['1/2 Inch', '3/4 Inch', '1 Inch'],
-            'Semen Tiga Roda 40kg' => ['Standard'],
-            'Cat Tembok Dulux Catylac Putih' => ['5 Kg', '25 Kg'],
-            'Kawat Beton / Bendrat' => ['1 Roll'],
-            'Paku Kayu' => ['2 Inch', '3 Inch', '4 Inch'],
-            'Seng Gelombang' => ['1.8 Meter', '2.4 Meter'],
-            'Kran Air Stainless Bulat' => ['1/2 Inch', '3/4 Inch'],
-            'Besi Beton SNI' => ['8mm', '10mm', '12mm'],
-            'Kuas Cat Eterna' => ['2 Inch', '3 Inch', '4 Inch'],
-            'Double Tape Busa 3M' => ['Standard'],
+        // ==============================
+        // 3. PRODUCTS + PRODUCT UNITS + INITIAL RESTOCKS
+        // ==============================
+        $productData = [
+            [
+                'name' => 'Semen Tiga Roda',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'kg',
+                'cost_price' => 2500,   // per kg
+                'selling_price' => 3200, // per kg
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 500,
+                'initial_stock' => 2500, // 50 sak
+                'units' => [
+                    ['name' => 'sak', 'factor' => 50],    // 1 sak = 50 kg
+                    ['name' => 'ton', 'factor' => 1000],   // 1 ton = 1000 kg
+                ],
+            ],
+            [
+                'name' => 'Semen Holcim',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'kg',
+                'cost_price' => 2300,
+                'selling_price' => 3000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 500,
+                'initial_stock' => 2000, // 40 sak
+                'units' => [
+                    ['name' => 'sak', 'factor' => 50],
+                    ['name' => 'ton', 'factor' => 1000],
+                ],
+            ],
+            [
+                'name' => 'Besi Beton 8mm',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'batang',
+                'cost_price' => 45000,
+                'selling_price' => 55000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 20,
+                'initial_stock' => 100,
+                'units' => [
+                    ['name' => 'lonjor', 'factor' => 1],  // 1 lonjor = 1 batang
+                    ['name' => 'ikat', 'factor' => 12],    // 1 ikat = 12 batang
+                ],
+            ],
+            [
+                'name' => 'Besi Beton 10mm',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'batang',
+                'cost_price' => 65000,
+                'selling_price' => 78000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 15,
+                'initial_stock' => 60,
+                'units' => [
+                    ['name' => 'lonjor', 'factor' => 1],
+                    ['name' => 'ikat', 'factor' => 12],
+                ],
+            ],
+            [
+                'name' => 'Pipa PVC AW 1/2"',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'batang',
+                'cost_price' => 25000,
+                'selling_price' => 32000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 20,
+                'initial_stock' => 80,
+                'units' => [
+                    ['name' => 'batang', 'factor' => 1],
+                    ['name' => 'lusin', 'factor' => 12],
+                ],
+            ],
+            [
+                'name' => 'Pipa PVC AW 3/4"',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'batang',
+                'cost_price' => 35000,
+                'selling_price' => 45000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 15,
+                'initial_stock' => 50,
+                'units' => [
+                    ['name' => 'batang', 'factor' => 1],
+                    ['name' => 'lusin', 'factor' => 12],
+                ],
+            ],
+            [
+                'name' => 'SSD V-Gen SATA 256GB',
+                'category' => 'Sparepart Laptop',
+                'base_unit' => 'pcs',
+                'cost_price' => 250000,
+                'selling_price' => 320000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 15,
+                'units' => [
+                    ['name' => 'pcs', 'factor' => 1],
+                    ['name' => 'box', 'factor' => 10],
+                ],
+            ],
+            [
+                'name' => 'RAM DDR4 SODIMM 8GB',
+                'category' => 'Sparepart Laptop',
+                'base_unit' => 'pcs',
+                'cost_price' => 180000,
+                'selling_price' => 240000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 20,
+                'units' => [
+                    ['name' => 'pcs', 'factor' => 1],
+                    ['name' => 'box', 'factor' => 10],
+                ],
+            ],
+            [
+                'name' => 'Paku Kayu 3 Inch',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'kg',
+                'cost_price' => 18000,
+                'selling_price' => 25000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 5,
+                'initial_stock' => 30,
+                'units' => [
+                    ['name' => 'dus', 'factor' => 10],   // 1 dus = 10 kg
+                ],
+            ],
+            [
+                'name' => 'Seng Gelombang 180cm',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'lembar',
+                'cost_price' => 45000,
+                'selling_price' => 58000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 10,
+                'initial_stock' => 40,
+                'units' => [
+                    ['name' => 'lembar', 'factor' => 1],
+                    ['name' => 'kodi', 'factor' => 20],   // 1 kodi = 20 lembar
+                ],
+            ],
+            [
+                'name' => 'Triplek 12mm',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'lembar',
+                'cost_price' => 120000,
+                'selling_price' => 150000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 5,
+                'initial_stock' => 20,
+                'units' => [
+                    ['name' => 'lembar', 'factor' => 1],
+                ],
+            ],
+            [
+                'name' => 'Kran Air Stainless 1/2"',
+                'category' => 'Aksesoris Rumah Tangga',
+                'base_unit' => 'buah',
+                'cost_price' => 25000,
+                'selling_price' => 35000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 24,
+                'units' => [
+                    ['name' => 'buah', 'factor' => 1],
+                    ['name' => 'lusin', 'factor' => 12],
+                ],
+            ],
+            [
+                'name' => 'Kawat Bendrat',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'kg',
+                'cost_price' => 12000,
+                'selling_price' => 16000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 10,
+                'initial_stock' => 50,
+                'units' => [
+                    ['name' => 'roll', 'factor' => 25],   // 1 roll = 25 kg
+                ],
+            ],
+            [
+                'name' => 'Kuas Cat 3 Inch',
+                'category' => 'Aksesoris Rumah Tangga',
+                'base_unit' => 'buah',
+                'cost_price' => 8000,
+                'selling_price' => 12000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 10,
+                'initial_stock' => 3, // low stock
+                'units' => [
+                    ['name' => 'buah', 'factor' => 1],
+                    ['name' => 'lusin', 'factor' => 12],
+                ],
+            ],
+            [
+                'name' => 'Bata Ringan Hebel',
+                'category' => 'Bahan Bangunan',
+                'base_unit' => 'buah',
+                'cost_price' => 8500,
+                'selling_price' => 11000,
+                'location' => 'Gudang Muntilan',
+                'min_stock' => 100,
+                'initial_stock' => 50, // low stock
+                'units' => [
+                    ['name' => 'buah', 'factor' => 1],
+                    ['name' => 'kubik', 'factor' => 133],  // ≈133 buah per m³
+                ],
+            ],
         ];
 
-        $variants = [];
-        $invoiceCounter = 1;
+        $products = [];
 
-        foreach ($productNames as $pName => $sizes) {
+        foreach ($productData as $pd) {
             $product = Product::create([
-                'name' => $pName,
-                'description' => "Katalog barang untuk " . $pName,
+                'name' => $pd['name'],
+                'category_id' => $categories[$pd['category']]->id,
+                'base_unit' => $pd['base_unit'],
+                'cost_price_per_base_unit' => $pd['cost_price'],
+                'selling_price_per_base_unit' => $pd['selling_price'],
+                'stock_qty_base_unit' => $pd['initial_stock'],
+                'location' => $pd['location'],
+                'min_stock_threshold' => $pd['min_stock'],
+                'is_active' => true,
             ]);
 
-            foreach ($sizes as $idx => $size) {
-                // Calculate realistic prices (in Rupiah)
-                $purchasePrice = rand(5, 150) * 1000; // e.g. Rp 5.000 to Rp 150.000
-                $sellingPrice = round($purchasePrice * rand(115, 135) / 100, -2); // 15-35% markup, rounded to nearest 100 Rp
-
-                // Select location index based on category
-                $locIndex = 0;
-                if (str_contains($pName, 'Pipa')) {
-                    $locIndex = 0;
-                } elseif (str_contains($pName, 'Paku') || str_contains($pName, 'Kuas')) {
-                    $locIndex = 1;
-                } elseif (str_contains($pName, 'Cat')) {
-                    $locIndex = 2;
-                } elseif (str_contains($pName, 'Semen') || str_contains($pName, 'Besi')) {
-                    $locIndex = 4;
-                } else {
-                    $locIndex = 5;
-                }
-
-                $location = $locations[$locIndex];
-                $initialStock = rand(20, 100);
-
-                $variant = ProductVariant::create([
+            // Create unit jual
+            foreach ($pd['units'] as $unit) {
+                ProductUnit::create([
                     'product_id' => $product->id,
-                    'size' => $size,
-                    'sku' => strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $pName), 0, 4)) . '-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $size), 0, 3)) . '-' . rand(10, 99),
-                    'barcode' => '899' . sprintf('%010d', rand(1, 9999999999)),
-                    'purchase_price' => $purchasePrice,
-                    'selling_price' => $sellingPrice,
-                    'stock' => $initialStock,
-                    'min_stock_level' => rand(5, 10),
-                    'location_id' => $location->id,
-                ]);
-
-                $variants[] = $variant;
-
-                // Log initial stock movement (in)
-                StockMovement::create([
-                    'product_id' => $product->id,
-                    'user_id' => $owner->id,
-                    'movement_type' => 'in',
-                    'quantity' => $initialStock,
-                    'notes' => 'Stok awal barang masuk dari kulakan',
+                    'unit_name' => $unit['name'],
+                    'conversion_factor' => $unit['factor'],
                 ]);
             }
+
+            // Initial restock record
+            $restockUnit = $pd['units'][0];
+            Restock::create([
+                'product_id' => $product->id,
+                'qty_base_unit' => $pd['initial_stock'],
+                'unit_name_at_restock' => $restockUnit['name'],
+                'cost_price_per_base_unit_at_restock' => $pd['cost_price'],
+                'location' => $pd['location'],
+                'restocked_by_user_id' => $owner->id,
+                'restocked_at' => now()->subDays(14),
+            ]);
+
+            $products[] = $product;
         }
 
-        // 5. Create Transactions
-        for ($t = 1; $t <= 15; $t++) {
-            $user = $users[array_rand($users)];
-            $member = rand(0, 1) ? $members->random() : null;
+        // ==============================
+        // 4. ADDITIONAL RESTOCKS
+        // ==============================
+        $semenTR = $products[0];
+        Restock::create([
+            'product_id' => $semenTR->id,
+            'qty_base_unit' => 1500, // 30 sak
+            'unit_name_at_restock' => 'sak',
+            'cost_price_per_base_unit_at_restock' => 2700, // naik dari 2500
+            'location' => 'Gudang Muntilan',
+            'restocked_by_user_id' => $karyawan1->id,
+            'restocked_at' => now()->subDays(7),
+        ]);
+        // Update weighted average
+        $newCost = ($semenTR->stock_qty_base_unit * $semenTR->cost_price_per_base_unit + 1500 * 2700) / ($semenTR->stock_qty_base_unit + 1500);
+        $semenTR->update([
+            'stock_qty_base_unit' => $semenTR->stock_qty_base_unit + 1500,
+            'cost_price_per_base_unit' => round($newCost, 2),
+        ]);
 
-            // Choose 1-4 random variants to sell
-            $totalCost = 0;
-            $totalRevenue = 0;
-            $itemsToSave = [];
+        // Notifikasi restock
+        Notification::create([
+            'recipient_user_id' => $owner->id,
+            'type' => 'restock',
+            'related_restock_id' => 2,
+            'is_anomaly' => false,
+            'message' => 'Restock: Semen Tiga Roda — 30 sak (1.500 kg) oleh Budi Santoso. HPP: Rp 2.700/kg.',
+            'is_read' => true,
+            'created_at' => now()->subDays(7),
+        ]);
 
-            // Get random count of items for this transaction
-            $itemCount = rand(1, 4);
-            $chosenKeys = array_rand($variants, $itemCount);
-            
-            // Normalize keys if array_rand returned a single integer
-            $chosenVariantKeys = is_array($chosenKeys) ? $chosenKeys : [$chosenKeys];
+        // ==============================
+        // 5. SAMPLE TRANSACTIONS
+        // ==============================
+        $txnData = [
+            // Transaksi 1: Budi jual semen 3 sak + paku 2 kg (6 hari lalu)
+            [
+                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 6,
+                'items' => [
+                    ['product_idx' => 0, 'unit' => 'sak', 'qty' => 3],
+                    ['product_idx' => 8, 'unit' => 'kg', 'qty' => 2],
+                ],
+            ],
+            // Transaksi 2: Siti jual besi beton 8mm 1 ikat (5 hari lalu)
+            [
+                'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 0, 'days_ago' => 5,
+                'items' => [
+                    ['product_idx' => 2, 'unit' => 'ikat', 'qty' => 1],
+                ],
+            ],
+            // Transaksi 3: Owner jual SSD 2 pcs + kuas 3 buah, diskon 10.000 (4 hari lalu)
+            [
+                'cashier' => $owner, 'method' => 'tunai', 'discount' => 10000, 'days_ago' => 4,
+                'items' => [
+                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
+                    ['product_idx' => 13, 'unit' => 'buah', 'qty' => 3],
+                ],
+            ],
+            // Transaksi 4: Budi jual pipa 1/2" 5 batang (3 hari lalu)
+            [
+                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 3,
+                'items' => [
+                    ['product_idx' => 4, 'unit' => 'batang', 'qty' => 5],
+                ],
+            ],
+            // Transaksi 5: Siti jual seng 3 lembar + triplek 2 lembar (3 hari lalu)
+            [
+                'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 5000, 'days_ago' => 3,
+                'items' => [
+                    ['product_idx' => 9, 'unit' => 'lembar', 'qty' => 3],
+                    ['product_idx' => 10, 'unit' => 'lembar', 'qty' => 2],
+                ],
+            ],
+            // Transaksi 6: Owner jual semen holcim 5 sak (2 hari lalu)
+            [
+                'cashier' => $owner, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 2,
+                'items' => [
+                    ['product_idx' => 1, 'unit' => 'sak', 'qty' => 5],
+                ],
+            ],
+            // Transaksi 7: Budi jual kran air 6 buah + pipa 3/4" 3 batang (2 hari lalu)
+            [
+                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 15000, 'days_ago' => 2,
+                'items' => [
+                    ['product_idx' => 11, 'unit' => 'buah', 'qty' => 6],
+                    ['product_idx' => 5, 'unit' => 'batang', 'qty' => 3],
+                ],
+            ],
+            // Transaksi 8: Siti jual RAM 1 pcs (1 hari lalu)
+            [
+                'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 0, 'days_ago' => 1,
+                'items' => [
+                    ['product_idx' => 7, 'unit' => 'pcs', 'qty' => 1],
+                ],
+            ],
+            // Transaksi 9: Budi jual besi 10mm 5 lonjor + kawat 1 roll (1 hari lalu)
+            [
+                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 1,
+                'items' => [
+                    ['product_idx' => 3, 'unit' => 'lonjor', 'qty' => 5],
+                    ['product_idx' => 12, 'unit' => 'roll', 'qty' => 1],
+                ],
+            ],
+            // Transaksi 10: Owner jual semen tiga roda 2 sak + bata 20 buah (hari ini)
+            [
+                'cashier' => $owner, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 0,
+                'items' => [
+                    ['product_idx' => 0, 'unit' => 'sak', 'qty' => 2],
+                    ['product_idx' => 14, 'unit' => 'buah', 'qty' => 20],
+                ],
+            ],
+            // Transaksi 11: Budi jual pipa 1/2" 2 lusin (hari ini)
+            [
+                'cashier' => $karyawan1, 'method' => 'qris', 'discount' => 20000, 'days_ago' => 0,
+                'items' => [
+                    ['product_idx' => 4, 'unit' => 'lusin', 'qty' => 2],
+                ],
+            ],
+            // Transaksi 12: Siti jual SSD 2 pcs + paku 1 dus (hari ini)
+            [
+                'cashier' => $karyawan2, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 0,
+                'items' => [
+                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
+                    ['product_idx' => 8, 'unit' => 'dus', 'qty' => 1],
+                ],
+            ],
+        ];
 
-            foreach ($chosenVariantKeys as $variantIndex) {
-                $variant = $variants[$variantIndex];
-                $quantity = rand(1, 5);
+        foreach ($txnData as $tx) {
+            $subtotal = 0;
+            $itemsForTxn = [];
 
-                $totalCost += $variant->purchase_price * $quantity;
-                $totalRevenue += $variant->selling_price * $quantity;
+            foreach ($tx['items'] as $item) {
+                $product = $products[$item['product_idx']];
+                $unit = ProductUnit::where('product_id', $product->id)
+                    ->where('unit_name', $item['unit'])
+                    ->first();
 
-                $itemsToSave[] = [
-                    'product_id' => $variant->product_id,
-                    'quantity' => $quantity,
-                    'selling_price' => $variant->selling_price,
-                    'purchase_price' => $variant->purchase_price,
-                    'variant' => $variant,
+                // If unit is the base unit itself
+                $conversionFactor = $unit ? $unit->conversion_factor : 1;
+                $unitName = $unit ? $unit->unit_name : $product->base_unit;
+
+                $pricePerUnit = $product->selling_price_per_base_unit * $conversionFactor;
+                $lineTotal = $pricePerUnit * $item['qty'];
+                $subtotal += $lineTotal;
+
+                $itemsForTxn[] = [
+                    'product' => $product,
+                    'unit_name' => $unitName,
+                    'qty' => $item['qty'],
+                    'conversion_factor' => $conversionFactor,
+                    'price_per_unit' => $pricePerUnit,
+                    'cost_price_base' => $product->cost_price_per_base_unit,
+                    'qty_base' => $item['qty'] * $conversionFactor,
                 ];
             }
 
-            // Apply a small discount occasionally if member
-            $discount = 0;
-            if ($member && rand(0, 1)) {
-                $discount = round(($totalRevenue * 0.05), -2); // 5% discount
-            }
-
-            $invoiceNumber = 'INV-' . date('Ymd') . '-' . sprintf('%04d', $invoiceCounter++);
+            $txnDatetime = now()->subDays($tx['days_ago'])->subHours(rand(1, 10));
 
             $transaction = Transaction::create([
-                'invoice_number' => $invoiceNumber,
-                'user_id' => $user->id,
-                'member_id' => $member?->id,
-                'total_revenue' => $totalRevenue - $discount,
-                'total_cost' => $totalCost,
-                'discount_applied' => $discount,
-                'status' => 'completed',
+                'cashier_user_id' => $tx['cashier']->id,
+                'transaction_datetime' => $txnDatetime,
+                'payment_method' => $tx['method'],
+                'subtotal_before_discount' => $subtotal,
+                'discount_amount' => $tx['discount'],
+                'total_amount' => $subtotal - $tx['discount'],
+                'created_at' => $txnDatetime,
             ]);
 
-            // Set custom created_at timestamp backdated slightly for realistic reporting
-            $transaction->created_at = now()->subDays(rand(0, 7))->subHours(rand(0, 10));
-            $transaction->save();
-
-            foreach ($itemsToSave as $item) {
-                TransactionDetail::create([
+            foreach ($itemsForTxn as $item) {
+                TransactionItem::create([
                     'transaction_id' => $transaction->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'selling_price' => $item['selling_price'],
-                    'purchase_price' => $item['purchase_price'],
+                    'product_id' => $item['product']->id,
+                    'unit_name_at_transaction' => $item['unit_name'],
+                    'qty_in_selected_unit' => $item['qty'],
+                    'conversion_factor_at_transaction' => $item['conversion_factor'],
+                    'price_per_unit_at_transaction' => $item['price_per_unit'],
+                    'cost_price_per_base_unit_at_transaction' => $item['cost_price_base'],
                 ]);
 
-                // Update variant stock
-                $v = $item['variant'];
-                $v->stock = max(0, $v->stock - $item['quantity']);
-                $v->save();
-
-                // Log stock movement (out)
-                StockMovement::create([
-                    'product_id' => $item['product_id'],
-                    'user_id' => $user->id,
-                    'movement_type' => 'out',
-                    'quantity' => $item['quantity'],
-                    'notes' => "Terjual via transaksi {$invoiceNumber}",
-                    'created_at' => $transaction->created_at,
-                ]);
+                // Reduce stock
+                $item['product']->decrement('stock_qty_base_unit', $item['qty_base']);
             }
         }
+
+        // ==============================
+        // 6. ADDITIONAL NOTIFICATIONS
+        // ==============================
+        Notification::create([
+            'recipient_user_id' => $owner->id,
+            'type' => 'restock',
+            'related_restock_id' => 1,
+            'is_anomaly' => false,
+            'message' => 'Restock awal: Semen Tiga Roda — 50 sak (2.500 kg) oleh Ci Ali. HPP: Rp 2.500/kg.',
+            'is_read' => true,
+            'created_at' => now()->subDays(14),
+        ]);
+
+        Notification::create([
+            'recipient_user_id' => $owner->id,
+            'type' => 'restock',
+            'is_anomaly' => true,
+            'message' => '⚠️ Restock perlu dicek: Kuas Cat 3 Inch — 50 buah oleh Budi Santoso. HPP: Rp 12.000/kg (berbeda >20% dari HPP saat ini Rp 8.000/kg).',
+            'is_read' => false,
+            'created_at' => now()->subHours(3),
+        ]);
+
+        Notification::create([
+            'recipient_user_id' => $owner->id,
+            'type' => 'backup',
+            'is_anomaly' => false,
+            'message' => 'Backup harian berhasil dibuat. Klik untuk download.',
+            'is_read' => false,
+            'created_at' => now()->subHours(1),
+        ]);
     }
 }

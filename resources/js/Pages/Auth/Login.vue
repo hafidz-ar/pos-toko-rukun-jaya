@@ -14,21 +14,15 @@ const togglePassword = () => {
 };
 
 const handleLogin = () => {
-    // In a real application, you would post to a login route
-    // form.post(route('login'));
-    
-    // Simulate successful login
-    form.processing = true;
-    setTimeout(() => {
-        form.processing = false;
-        console.log("Authentication successful for ID:", form.username);
-        router.visit('/dashboard');
-    }, 1200);
+    form.post('/login', {
+        preserveScroll: true,
+        onError: () => form.reset('password'),
+    });
 };
 </script>
 
 <template>
-    <Head title="Login | Toko Material POS" />
+    <Head title="Login | Toko Rukun Jaya" />
     
     <div class="fixed inset-0 bg-industrial flex items-center justify-center p-4 md:p-6 overflow-y-auto">
         <!-- Login Container -->
@@ -42,7 +36,7 @@ const handleLogin = () => {
                     </span>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-bold text-primary tracking-tight text-center">
-                    Toko Material POS
+                    Toko Rukun Jaya
                 </h1>
                 <p class="text-xs md:text-sm text-secondary mt-1">Industrial Excellence &amp; Precision</p>
             </div>
@@ -57,6 +51,12 @@ const handleLogin = () => {
                 </header>
                 
                 <form class="space-y-4 md:space-y-5 mt-6" @submit.prevent="handleLogin">
+                    <!-- Error Message -->
+                    <div v-if="form.errors.username" class="bg-error-container text-on-error-container text-sm px-4 py-3 rounded-lg flex items-center gap-2">
+                        <span class="material-symbols-outlined text-error">error</span>
+                        {{ form.errors.username }}
+                    </div>
+
                     <!-- ID Pengguna Input -->
                     <div class="flex flex-col space-y-1.5">
                         <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider" for="username">
@@ -138,7 +138,7 @@ const handleLogin = () => {
             <!-- Footer / Support -->
             <footer class="mt-6 md:mt-8 text-center">
                 <p class="text-xs font-semibold text-secondary">
-                    v2.4.0 © 2024 Toko Material POS. Build ID: TM-882
+                    v2.4.0 © 2024 Toko Rukun Jaya. Build ID: TRJ-882
                 </p>
                 <div class="flex justify-center space-x-4 mt-2">
                     <span class="material-symbols-outlined text-outline-variant">support_agent</span>
