@@ -77,11 +77,6 @@ const exportPdf = () => {
     window.location.href = `/laporan/export-pdf?period=${period}`;
 };
 
-// Print Report
-const printReport = () => {
-    window.print();
-};
-
 </script>
 
 <template>
@@ -105,7 +100,7 @@ const printReport = () => {
         </Transition>
 
         <!-- SIDE NAVBAR (Desktop) -->
-        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
+        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30 print:hidden">
             <div class="px-4 py-6">
                 <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
@@ -191,18 +186,26 @@ const printReport = () => {
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <main class="flex-1 flex flex-col h-screen overflow-hidden print:h-auto print:overflow-visible print:bg-white">
             <!-- TopNavBar -->
-            <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min bg-surface border-b-2 border-outline-variant">
+            <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min bg-surface border-b-2 border-outline-variant print:hidden">
                 <div class="flex items-center gap-4">
                     <span class="text-headline-md font-headline-md font-bold text-primary">Laporan Keuangan</span>
                 </div>
             </header>
 
             <!-- Dashboard Canvas -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar p-margin-desktop space-y-gutter pb-24 md:pb-8">
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-margin-desktop space-y-gutter pb-24 md:pb-8 print:p-0 print:overflow-visible">
+                <!-- Print Only Header -->
+                <div class="hidden print:flex flex-col items-center text-center border-b-4 border-double border-outline-variant pb-4 mb-6">
+                    <h1 class="text-headline-lg font-bold text-primary">Toko Rukun Jaya</h1>
+                    <h2 class="text-headline-md font-bold mt-1">Laporan Keuangan</h2>
+                    <p class="text-body-md text-secondary mt-1">Periode: {{ props.periodLabel }}</p>
+                    <p class="text-xs text-secondary mt-2">Dicetak pada: {{ new Date().toLocaleString('id-ID') }} WIB</p>
+                </div>
+
                 <!-- Page Title & Actions -->
-                <div class="bg-surface-container-low border-2 border-outline-variant rounded p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="bg-surface-container-low border-2 border-outline-variant rounded p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <span class="font-bold text-on-surface">Periode:</span>
                         <div class="flex flex-wrap bg-surface-container-lowest border-2 border-outline-variant rounded p-1">
@@ -215,9 +218,6 @@ const printReport = () => {
                     <div class="flex items-center gap-2 md:space-x-4">
                         <button @click="exportPdf" class="flex items-center justify-center gap-2 border-2 border-outline-variant px-4 py-2 rounded text-primary font-bold hover:bg-surface-container-high transition-colors w-full md:w-auto">
                             <span class="material-symbols-outlined text-sm">picture_as_pdf</span>Ekspor PDF
-                        </button>
-                        <button @click="printReport" class="flex items-center justify-center gap-2 bg-primary text-on-primary px-4 py-2 rounded font-bold hover:brightness-90 transition-all w-full md:w-auto">
-                            <span class="material-symbols-outlined text-sm">print</span>Cetak Laporan
                         </button>
                     </div>
                 </div>
@@ -295,7 +295,7 @@ const printReport = () => {
                         </div>
                         
                         <!-- Pagination Bar -->
-                        <div v-if="props.labaPerProduk && props.labaPerProduk.total > 0" class="p-4 bg-surface-container-low border-t-2 border-outline-variant flex items-center justify-between flex-wrap gap-4">
+                        <div v-if="props.labaPerProduk && props.labaPerProduk.total > 0" class="p-4 bg-surface-container-low border-t-2 border-outline-variant flex items-center justify-between flex-wrap gap-4 print:hidden">
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2">
                                     <label for="products-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
@@ -375,7 +375,7 @@ const printReport = () => {
         </main>
         
         <!-- BottomNavBar (Mobile Only) -->
-        <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 bg-surface border-t-2 border-outline-variant shadow-lg md:hidden z-50">
+        <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 bg-surface border-t-2 border-outline-variant shadow-lg md:hidden z-50 print:hidden">
             <Link href="/dashboard" class="flex flex-col items-center justify-center text-secondary cursor-pointer">
                 <span class="material-symbols-outlined">home</span>
                 <span class="text-[10px] font-bold">Home</span>

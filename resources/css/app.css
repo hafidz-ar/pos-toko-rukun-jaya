@@ -198,3 +198,54 @@
         /* Firefox */
     }
 }
+
+/* Print Stylesheet overrides */
+@media print {
+    html, body, #app, .h-screen, main, .overflow-hidden, .overflow-y-auto {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+    }
+
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt !important;
+    }
+
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Print margins */
+    @page {
+        size: A4;
+        margin: 1.5cm;
+    }
+
+    /* Ensure tables split nicely across pages */
+    table {
+        page-break-inside: auto;
+        border-collapse: collapse;
+        width: 100% !important;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tfoot {
+        display: table-footer-group;
+    }
+    
+    /* Ensure colors are printed nicely */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
