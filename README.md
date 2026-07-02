@@ -1,6 +1,6 @@
 # Aplikasi POS Toko Rukun Jaya
 
-Aplikasi Point of Sales (POS) berbasis web yang dirancang khusus untuk memenuhi kebutuhan operasional toko bangunan **Toko Rukun Jaya**. Aplikasi ini mengintegrasikan kasir, cek stok lintas satuan, manajemen restock dengan HPP rata-rata tertimbang, laporan keuangan (laba kotor per produk/kategori), serta backup data harian otomatis dan notifikasi terintegrasi dengan Telegram Bot.
+Aplikasi Point of Sales (POS) berbasis web yang dirancang khusus untuk memenuhi kebutuhan operasional **Toko Rukun Jaya**. Aplikasi ini mengintegrasikan kasir, cek stok lintas satuan, manajemen restock dengan HPP rata-rata tertimbang, laporan keuangan (laba kotor per produk/kategori), serta backup data harian otomatis dan notifikasi terintegrasi dengan Telegram Bot.
 
 ---
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -98,6 +98,20 @@ const totalAmount = computed(() => {
     return Math.max(0, subtotal.value - (discount.value || 0));
 });
 
+watch(discount, (val) => {
+    if (val < 0 || isNaN(val) || val === '') {
+        discount.value = 0;
+    } else if (val > subtotal.value) {
+        discount.value = subtotal.value;
+    }
+});
+
+const preventInvalidNumberKeys = (event) => {
+    if (['-', '+', 'e', 'E'].includes(event.key)) {
+        event.preventDefault();
+    }
+};
+
 const kembalian = computed(() => {
     if (selectedPaymentMethod.value === 'tunai') {
         return Math.max(0, (cashInput.value || 0) - totalAmount.value);
@@ -158,16 +172,33 @@ const confirmPayment = () => {
         },
         body: JSON.stringify(payload),
     })
-        .then(res => res.json())
+        .then(async res => {
+            if (res.status === 419) {
+                return Promise.reject('Sesi Anda telah kedaluwarsa. Silakan muat ulang halaman (refresh) dan login kembali.');
+            }
+            if (res.status === 401 || res.status === 403) {
+                return Promise.reject('Akses ditolak atau sesi telah habis. Silakan muat ulang halaman.');
+            }
+
+            const isJson = res.headers.get('content-type')?.includes('application/json');
+            const data = isJson ? await res.json() : null;
+
+            if (!res.ok) {
+                const errorMsg = (data && data.message) || `Terjadi kesalahan (Status: ${res.status})`;
+                return Promise.reject(errorMsg);
+            }
+
+            return data;
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 openReceipt(data.receipt);
             } else {
-                errorMessage.value = data.message || 'Terjadi kesalahan.';
+                errorMessage.value = (data && data.message) || 'Terjadi kesalahan.';
             }
         })
-        .catch(() => {
-            errorMessage.value = 'Gagal terhubung ke server.';
+        .catch(err => {
+            errorMessage.value = typeof err === 'string' ? err : 'Gagal terhubung ke server. Pastikan server aktif dan koneksi internet stabil.';
         })
         .finally(() => {
             isSubmitting.value = false;
@@ -311,7 +342,7 @@ onUnmounted(() => {
                         </div>
                         <div class="flex items-center justify-between gap-4 py-1">
                             <label class="text-label-md text-on-surface-variant whitespace-nowrap">Diskon (Rp)</label>
-                            <input v-model.number="discount" class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" placeholder="0" type="number" min="0"/>
+                            <input v-model.number="discount" @keydown="preventInvalidNumberKeys" class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" placeholder="0" type="number" min="0"/>
                         </div>
                         <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-dashed border-outline-variant">
                             <span class="text-label-xl font-bold text-on-surface">TOTAL</span>
