@@ -816,7 +816,7 @@ const linkTelegram = () => {
 }
 
 .btn-primary-industrial {
-    background-color: #ee6c12;
+    background-color: #9e4300;
     color: #ffffff;
     font-weight: 700;
     transition: all 150ms ease;
@@ -824,7 +824,7 @@ const linkTelegram = () => {
     cursor: pointer;
 }
 .btn-primary-industrial:hover {
-    background-color: #d65b0f;
+    background-color: #8e3c00;
 }
 .btn-primary-industrial:active {
     transform: translateY(1px);

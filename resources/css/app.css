@@ -118,9 +118,9 @@
         transform: translateY(1px);
     }
 
-    /* Primary Button: Solid Industrial Orange (#ee6c12) background with White text */
+    /* Primary Button: Solid Industrial Brown (#9e4300) background with White text */
     .btn-primary {
-        background-color: #ee6c12;
+        background-color: #9e4300;
         color: #ffffff;
         font-weight: 700;
         border-radius: 0.25rem;
@@ -132,7 +132,7 @@
         border: none;
     }
     .btn-primary:hover {
-        background-color: #d65b0f;
+        background-color: #8e3c00;
     }
     .btn-primary:active {
         transform: translateY(1px);
