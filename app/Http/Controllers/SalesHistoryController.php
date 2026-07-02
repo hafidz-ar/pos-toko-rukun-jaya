@@ -30,8 +30,14 @@ class SalesHistoryController extends Controller
             $query->whereDate('transaction_datetime', '<=', $to);
         }
 
+        $perPage = $request->integer('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 50])) {
+            $perPage = 10;
+        }
+
         $transactions = $query->orderByDesc('transaction_datetime')
-            ->paginate(20)
+            ->paginate($perPage)
+            ->withQueryString()
             ->through(fn ($txn) => [
                 'id' => $txn->id,
                 'datetime' => $txn->transaction_datetime->format('d/m/Y H:i'),
@@ -51,6 +57,7 @@ class SalesHistoryController extends Controller
             'filters' => [
                 'date_from' => $request->get('date_from', ''),
                 'date_to' => $request->get('date_to', ''),
+                'per_page' => $perPage,
             ],
         ]);
     }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -7,8 +7,9 @@ const props = defineProps({
     period: String,
     periodLabel: String,
     summary: Object,
-    labaPerProduk: Array,
+    labaPerProduk: Object,
     labaPerKategori: Array,
+    filters: Object,
 });
 
 const formatRupiah = (value) => {
@@ -42,10 +43,33 @@ const handleLogout = () => {
     }, 800);
 };
 
-// Period selector
+// Period & per page selector
+const perPage = ref(parseInt(localStorage.getItem('pos_per_page_laporan') || props.filters?.per_page || '10'));
+
 const changePeriod = (period) => {
-    router.get('/laporan', { period }, { preserveState: false });
+    router.get('/laporan', { 
+        period,
+        per_page: perPage.value || undefined,
+    }, { preserveState: false });
 };
+
+const applyPerPage = () => {
+    localStorage.setItem('pos_per_page_laporan', perPage.value.toString());
+    router.get('/laporan', {
+        period: props.period || 'mingguan',
+        per_page: perPage.value || undefined,
+    }, { preserveState: false });
+};
+
+onMounted(() => {
+    const savedPerPage = localStorage.getItem('pos_per_page_laporan');
+    if (savedPerPage && !props.filters?.per_page) {
+        router.get('/laporan', {
+            period: props.period || 'mingguan',
+            per_page: savedPerPage
+        }, { replace: true, preserveState: false });
+    }
+});
 
 // Export PDF
 const exportPdf = () => {
@@ -256,10 +280,10 @@ const printReport = () => {
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y-2 divide-outline-variant/30">
-                                    <tr v-if="!props.labaPerProduk || props.labaPerProduk.length === 0">
+                                    <tr v-if="!props.labaPerProduk?.data || props.labaPerProduk.data.length === 0">
                                         <td colspan="5" class="px-4 py-8 text-center text-secondary">Tidak ada data untuk periode ini.</td>
                                     </tr>
-                                    <tr v-for="produk in props.labaPerProduk" :key="produk.product_id" class="hover:bg-surface-container-low transition-colors">
+                                    <tr v-for="produk in props.labaPerProduk.data" :key="produk.product_id" class="hover:bg-surface-container-low transition-colors">
                                         <td class="px-4 py-4 text-on-surface">{{ produk.product_name }}</td>
                                         <td class="px-4 py-4 text-right">{{ produk.category }}</td>
                                         <td class="px-4 py-4 text-right">{{ formatShortRupiah(produk.total_revenue) }}</td>
@@ -268,6 +292,54 @@ const printReport = () => {
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <!-- Pagination Bar -->
+                        <div v-if="props.labaPerProduk && props.labaPerProduk.total > 0" class="p-4 bg-surface-container-low border-t-2 border-outline-variant flex items-center justify-between flex-wrap gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2">
+                                    <label for="products-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
+                                    <select id="products-per-page" v-model="perPage" @change="applyPerPage" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                        <option :value="5">5</option>
+                                        <option :value="10">10</option>
+                                        <option :value="20">20</option>
+                                        <option :value="50">50</option>
+                                    </select>
+                                    <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
+                                </div>
+                                <p class="text-label-md font-label-md text-secondary">
+                                    Menampilkan {{ props.labaPerProduk.from || 0 }}–{{ props.labaPerProduk.to || 0 }} dari {{ props.labaPerProduk.total || 0 }} data
+                                </p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button
+                                    @click="router.get(props.labaPerProduk.prev_page_url, {}, { preserveState: false })"
+                                    :disabled="!props.labaPerProduk.prev_page_url"
+                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    aria-label="Halaman Sebelumnya">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </button>
+                                <template v-for="link in props.labaPerProduk.links" :key="link.label">
+                                    <button
+                                        v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
+                                        @click="router.get(link.url, {}, { preserveState: false })"
+                                        :class="[
+                                            'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
+                                            link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
+                                        ]"
+                                        :disabled="!link.url"
+                                        :aria-label="'Halaman ' + link.label">
+                                        {{ link.label }}
+                                    </button>
+                                </template>
+                                <button
+                                    @click="router.get(props.labaPerProduk.next_page_url, {}, { preserveState: false })"
+                                    :disabled="!props.labaPerProduk.next_page_url"
+                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    aria-label="Halaman Berikutnya">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     

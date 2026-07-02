@@ -1,11 +1,32 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     products: Array,
-    restocks: Array,
-    auth: Object
+    restocks: Object,
+    auth: Object,
+    filters: Object,
+});
+
+const perPage = ref(parseInt(localStorage.getItem('pos_per_page_restok') || props.filters?.per_page || '10'));
+
+const applyPerPage = () => {
+    localStorage.setItem('pos_per_page_restok', perPage.value.toString());
+    router.get('/restock', {
+        per_page: perPage.value || undefined,
+        product_id: props.filters?.product_id || undefined,
+    }, { preserveState: false });
+};
+
+onMounted(() => {
+    const savedPerPage = localStorage.getItem('pos_per_page_restok');
+    if (savedPerPage && !props.filters?.per_page) {
+        router.get('/restock', {
+            product_id: props.filters?.product_id || undefined,
+            per_page: savedPerPage
+        }, { replace: true, preserveState: false });
+    }
 });
 
 // Form state
@@ -365,12 +386,12 @@ const formatRupiah = (number) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-if="restocks.length === 0">
+                                    <tr v-if="!restocks?.data || restocks.data.length === 0">
                                         <td colspan="5" class="py-8 text-center text-secondary">
                                             Belum ada riwayat restock.
                                         </td>
                                     </tr>
-                                    <tr v-for="item in restocks" :key="item.id" class="border-b border-outline-variant hover:bg-surface-container-lowest/50 transition-colors">
+                                    <tr v-for="item in restocks.data" :key="item.id" class="border-b border-outline-variant hover:bg-surface-container-lowest/50 transition-colors">
                                         <td class="py-3 px-4 text-sm">{{ item.datetime }}</td>
                                         <td class="py-3 px-4">
                                             <div class="font-bold text-on-surface">{{ item.product_name }}</div>
@@ -387,6 +408,54 @@ const formatRupiah = (number) => {
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <!-- Pagination Bar -->
+                        <div v-if="restocks && restocks.total > 0" class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4 rounded-b-2xl">
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-2">
+                                    <label for="restocks-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
+                                    <select id="restocks-per-page" v-model="perPage" @change="applyPerPage" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                        <option :value="5">5</option>
+                                        <option :value="10">10</option>
+                                        <option :value="20">20</option>
+                                        <option :value="50">50</option>
+                                    </select>
+                                    <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
+                                </div>
+                                <p class="text-label-md font-label-md text-secondary">
+                                    Menampilkan {{ restocks.from || 0 }}–{{ restocks.to || 0 }} dari {{ restocks.total || 0 }} data
+                                </p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button
+                                    @click="router.get(restocks.prev_page_url, { per_page: perPage }, { preserveState: false })"
+                                    :disabled="!restocks.prev_page_url"
+                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    aria-label="Halaman Sebelumnya">
+                                    <span class="material-symbols-outlined">chevron_left</span>
+                                </button>
+                                <template v-for="link in restocks.links" :key="link.label">
+                                <button
+                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
+                                        @click="router.get(link.url, { per_page: perPage }, { preserveState: false })"
+                                        :class="[
+                                            'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
+                                            link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
+                                        ]"
+                                        :disabled="!link.url"
+                                        :aria-label="'Halaman ' + link.label">
+                                        {{ link.label }}
+                                    </button>
+                                </template>
+                                <button
+                                    @click="router.get(restocks.next_page_url, { per_page: perPage }, { preserveState: false })"
+                                    :disabled="!restocks.next_page_url"
+                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    aria-label="Halaman Berikutnya">
+                                    <span class="material-symbols-outlined">chevron_right</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

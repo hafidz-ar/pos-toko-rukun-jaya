@@ -4,9 +4,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     auth: Object,
-    products: Array,
+    products: Object,
     categories: Array,
     filters: Object,
+    stats: Object,
 });
 
 // Toast
@@ -28,9 +29,20 @@ const handleLogout = () => {
 // Polling stok tiap 10 detik
 let pollInterval = null;
 onMounted(() => {
+    const savedPerPage = localStorage.getItem('pos_per_page_inventaris');
+    if (savedPerPage && !props.filters?.per_page) {
+        router.get('/inventaris', {
+            search: search.value || undefined,
+            category_id: categoryId.value || undefined,
+            low_stock: lowStockOnly.value || undefined,
+            per_page: savedPerPage
+        }, { replace: true, preserveState: false });
+        return;
+    }
+
     pollInterval = setInterval(() => {
         router.reload({
-            only: ['products'],
+            only: ['products', 'stats'],
             preserveState: true,
             preserveScroll: true
         });
@@ -45,12 +57,15 @@ onUnmounted(() => {
 const search = ref(props.filters?.search || '');
 const categoryId = ref(props.filters?.category_id || '');
 const lowStockOnly = ref(props.filters?.low_stock || false);
+const perPage = ref(parseInt(localStorage.getItem('pos_per_page_inventaris') || props.filters?.per_page || '10'));
 
 const applyFilter = () => {
+    localStorage.setItem('pos_per_page_inventaris', perPage.value.toString());
     router.get('/inventaris', {
         search: search.value || undefined,
         category_id: categoryId.value || undefined,
         low_stock: lowStockOnly.value || undefined,
+        per_page: perPage.value || undefined,
     }, { preserveState: false });
 };
 
@@ -58,20 +73,19 @@ const resetFilter = () => {
     search.value = '';
     categoryId.value = '';
     lowStockOnly.value = false;
-    router.get('/inventaris', {}, { preserveState: false });
+    router.get('/inventaris', {
+        per_page: perPage.value || undefined,
+    }, { preserveState: false });
 };
 
 // ───────── Stats dari data real ─────────
-const totalProducts = computed(() => props.products?.length || 0);
-const lowStockCount = computed(() => props.products?.filter(p => p.is_low_stock).length || 0);
+const totalProducts = computed(() => props.stats?.total_sku || 0);
+const lowStockCount = computed(() => props.stats?.low_stock_count || 0);
 const categoryCount = computed(() => props.categories?.length || 0);
-const totalValuation = computed(() => {
-    return props.products?.reduce((sum, p) => sum + (p.stock_qty_base_unit * p.cost_price_per_base_unit), 0) || 0;
-});
+const totalValuation = computed(() => props.stats?.total_valuation || 0);
 
 const formatRupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0);
 const formatShortRupiah = (v) => {
-    if (v >= 1e9) return 'Rp ' + (v / 1e9).toFixed(1) + 'M';
     if (v >= 1e6) return 'Rp ' + (v / 1e6).toFixed(1) + 'Jt';
     return formatRupiah(v);
 };
@@ -443,10 +457,10 @@ const closeMovements = () => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-outline-variant">
-                                <tr v-if="!props.products || props.products.length === 0">
+                                <tr v-if="!props.products?.data || props.products.data.length === 0">
                                     <td colspan="8" class="px-6 py-8 text-center text-secondary">Belum ada barang di inventaris.</td>
                                 </tr>
-                                <tr v-for="(product, index) in props.products" :key="product.id" :class="['hover:bg-surface-container-low transition-colors align-middle', index % 2 !== 0 ? 'bg-surface-container-lowest' : '']">
+                                <tr v-for="(product, index) in props.products.data" :key="product.id" :class="['hover:bg-surface-container-low transition-colors align-middle', index % 2 !== 0 ? 'bg-surface-container-lowest' : '']">
                                     <td class="px-4 py-3">
                                         <div class="w-14 h-14 rounded border border-outline-variant overflow-hidden bg-white flex items-center justify-center">
                                             <img v-if="product.photo_url" :alt="product.name" class="w-full h-full object-cover" :src="product.photo_url">
@@ -498,6 +512,54 @@ const closeMovements = () => {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Pagination Bar -->
+                    <div v-if="props.products && props.products.total > 0" class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <label for="per-page-select" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
+                                <select id="per-page-select" v-model="perPage" @change="applyFilter" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                    <option :value="5">5</option>
+                                    <option :value="10">10</option>
+                                    <option :value="20">20</option>
+                                    <option :value="50">50</option>
+                                </select>
+                                <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
+                            </div>
+                            <p class="text-label-md font-label-md text-secondary">
+                                Menampilkan {{ props.products.from || 0 }}–{{ props.products.to || 0 }} dari {{ props.products.total || 0 }} data
+                            </p>
+                        </div>
+                        <div class="flex gap-1">
+                            <button
+                                @click="router.get(props.products.prev_page_url, { per_page: perPage }, { preserveState: false })"
+                                :disabled="!props.products.prev_page_url"
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                aria-label="Halaman Sebelumnya">
+                                <span class="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <template v-for="link in props.products.links" :key="link.label">
+                                <button
+                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
+                                    @click="router.get(link.url, { per_page: perPage }, { preserveState: false })"
+                                    :class="[
+                                        'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
+                                        link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
+                                    ]"
+                                    :disabled="!link.url"
+                                    :aria-label="'Halaman ' + link.label">
+                                    {{ link.label }}
+                                </button>
+                            </template>
+                            <button
+                                @click="router.get(props.products.next_page_url, { per_page: perPage }, { preserveState: false })"
+                                :disabled="!props.products.next_page_url"
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                aria-label="Halaman Berikutnya">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

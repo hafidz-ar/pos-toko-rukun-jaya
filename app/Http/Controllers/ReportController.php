@@ -26,15 +26,19 @@ class ReportController extends Controller
                 $periodLabel = 'Hari Ini (' . $now->format('d/m/Y') . ')';
                 break;
             case 'minggu':
+            case 'mingguan':
                 $startDate = $now->copy()->startOfWeek(Carbon::MONDAY);
                 $endDate = $now->copy()->endOfWeek(Carbon::SUNDAY);
                 $periodLabel = 'Minggu Ini (' . $startDate->format('d/m') . ' - ' . $endDate->format('d/m/Y') . ')';
+                $period = 'mingguan';
                 break;
             case 'bulan':
+            case 'bulanan':
             default:
                 $startDate = $now->copy()->startOfMonth();
                 $endDate = $now->copy()->endOfMonth();
                 $periodLabel = $now->translatedFormat('F Y');
+                $period = 'bulanan';
                 break;
         }
 
@@ -115,6 +119,25 @@ class ReportController extends Controller
             ],
         ];
 
+        $perPage = $request->integer('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 50])) {
+            $perPage = 10;
+        }
+
+        // Paginate $labaPerProduk in-memory
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+        $paginatedItems = $labaPerProduk->slice(($currentPage - 1) * $perPage, $perPage)->values()->all();
+        $labaPerProdukPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $labaPerProduk->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        );
+
         return Inertia::render('Laporan', [
             'period' => $period,
             'periodLabel' => $periodLabel,
@@ -127,8 +150,12 @@ class ReportController extends Controller
                 'transaksi_merugi' => $transaksiMerugi,
                 'per_metode_bayar' => $perMetodeBayar,
             ],
-            'labaPerProduk' => $labaPerProduk,
+            'labaPerProduk' => $labaPerProdukPaginated,
             'labaPerKategori' => $labaPerKategori,
+            'filters' => [
+                'period' => $period,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
@@ -147,15 +174,19 @@ class ReportController extends Controller
                 $periodLabel = 'Hari Ini (' . $now->format('d/m/Y') . ')';
                 break;
             case 'minggu':
+            case 'mingguan':
                 $startDate = $now->copy()->startOfWeek(Carbon::MONDAY);
                 $endDate = $now->copy()->endOfWeek(Carbon::SUNDAY);
                 $periodLabel = 'Minggu Ini (' . $startDate->format('d/m') . ' - ' . $endDate->format('d/m/Y') . ')';
+                $period = 'mingguan';
                 break;
             case 'bulan':
+            case 'bulanan':
             default:
                 $startDate = $now->copy()->startOfMonth();
                 $endDate = $now->copy()->endOfMonth();
                 $periodLabel = $now->translatedFormat('F Y');
+                $period = 'bulanan';
                 break;
         }
 

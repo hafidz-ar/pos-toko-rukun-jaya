@@ -25,10 +25,15 @@ class RestockController extends Controller
             $query->where('product_id', $productId);
         }
 
+        $perPage = $request->integer('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 50])) {
+            $perPage = 10;
+        }
+
         $restocks = $query->orderByDesc('restocked_at')
-            ->limit(50)
-            ->get()
-            ->map(fn ($r) => [
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn ($r) => [
                 'id' => $r->id,
                 'product_name' => $r->product->name,
                 'product_category' => $r->product->category->name ?? '-',
@@ -72,6 +77,10 @@ class RestockController extends Controller
         return Inertia::render('Restock', [
             'restocks' => $restocks,
             'products' => $products,
+            'filters' => [
+                'product_id' => $request->get('product_id', ''),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

@@ -38,7 +38,12 @@ class InventoryController extends Controller
             $query->lowStock();
         }
 
-        $products = $query->orderBy('name')->get()->map(function ($product) {
+        $perPage = $request->integer('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 50])) {
+            $perPage = 10;
+        }
+
+        $products = $query->orderBy('name')->paginate($perPage)->withQueryString()->through(function ($product) {
             $altDisplay = $this->getAlternativeStockDisplay($product);
 
             return [
@@ -67,18 +72,30 @@ class InventoryController extends Controller
 
         $categories = Category::orderBy('name')->get();
 
+        // Calculate active stats before pagination
+        $stats = [
+            'total_sku' => Product::active()->count(),
+            'low_stock_count' => Product::active()->whereColumn('stock_qty_base_unit', '<=', 'min_stock_threshold')->count(),
+            'total_valuation' => (float) Product::active()->selectRaw('SUM(stock_qty_base_unit * cost_price_per_base_unit) as total')->value('total'),
+        ];
+
         // Check if it's an Inertia request or JSON (for polling)
         if ($request->wantsJson()) {
-            return response()->json(['products' => $products]);
+            return response()->json([
+                'products' => $products,
+                'stats' => $stats,
+            ]);
         }
 
         return Inertia::render('Inventaris', [
             'products' => $products,
             'categories' => $categories,
+            'stats' => $stats,
             'filters' => [
                 'search' => $request->get('search', ''),
                 'category_id' => $request->get('category_id', ''),
                 'low_stock' => $request->boolean('low_stock'),
+                'per_page' => $perPage,
             ],
         ]);
     }

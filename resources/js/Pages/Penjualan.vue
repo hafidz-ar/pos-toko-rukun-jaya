@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -30,22 +30,38 @@ const handleLogout = () => {
     }, 800);
 };
 
-// Filter tanggal
+// Filter tanggal & per page
 const dateFrom = ref(props.filters?.date_from || '');
 const dateTo = ref(props.filters?.date_to || '');
+const perPage = ref(parseInt(localStorage.getItem('pos_per_page_penjualan') || props.filters?.per_page || '10'));
 
 const applyFilter = () => {
+    localStorage.setItem('pos_per_page_penjualan', perPage.value.toString());
     router.get('/penjualan', {
         date_from: dateFrom.value || undefined,
         date_to: dateTo.value || undefined,
+        per_page: perPage.value || undefined,
     }, { preserveState: false });
 };
 
 const resetFilter = () => {
     dateFrom.value = '';
     dateTo.value = '';
-    router.get('/penjualan', {}, { preserveState: false });
+    router.get('/penjualan', {
+        per_page: perPage.value || undefined,
+    }, { preserveState: false });
 };
+
+onMounted(() => {
+    const savedPerPage = localStorage.getItem('pos_per_page_penjualan');
+    if (savedPerPage && !props.filters?.per_page) {
+        router.get('/penjualan', {
+            date_from: dateFrom.value || undefined,
+            date_to: dateTo.value || undefined,
+            per_page: savedPerPage
+        }, { replace: true, preserveState: false });
+    }
+});
 
 // Detail transaksi modal
 const showDetailModal = ref(false);
@@ -270,33 +286,48 @@ const goToPage = (url) => {
                     </div>
                     
                     <!-- Pagination -->
-                    <div v-if="props.transactions" class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4">
-                        <p class="text-label-md font-label-md text-secondary">
-                            Menampilkan {{ props.transactions.from || 0 }}–{{ props.transactions.to || 0 }} dari {{ props.transactions.total || 0 }} transaksi
-                        </p>
+                    <div v-if="props.transactions && props.transactions.total > 0" class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <label for="transactions-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
+                                <select id="transactions-per-page" v-model="perPage" @change="applyFilter" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                    <option :value="5">5</option>
+                                    <option :value="10">10</option>
+                                    <option :value="20">20</option>
+                                    <option :value="50">50</option>
+                                </select>
+                                <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
+                            </div>
+                            <p class="text-label-md font-label-md text-secondary">
+                                Menampilkan {{ props.transactions.from || 0 }}–{{ props.transactions.to || 0 }} dari {{ props.transactions.total || 0 }} transaksi
+                            </p>
+                        </div>
                         <div class="flex gap-1">
                             <button
                                 @click="goToPage(props.transactions.prev_page_url)"
                                 :disabled="!props.transactions.prev_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                aria-label="Halaman Sebelumnya">
                                 <span class="material-symbols-outlined">chevron_left</span>
                             </button>
                             <template v-for="link in props.transactions.links" :key="link.label">
                                 <button
-                                    v-if="link.label !== '&laquo; Previous' && link.label !== 'Next &raquo;'"
+                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
                                     @click="goToPage(link.url)"
                                     :class="[
                                         'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
                                         link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
                                     ]"
-                                    :disabled="!link.url">
+                                    :disabled="!link.url"
+                                    :aria-label="'Halaman ' + link.label">
                                     {{ link.label }}
                                 </button>
                             </template>
                             <button
                                 @click="goToPage(props.transactions.next_page_url)"
                                 :disabled="!props.transactions.next_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                aria-label="Halaman Berikutnya">
                                 <span class="material-symbols-outlined">chevron_right</span>
                             </button>
                         </div>
