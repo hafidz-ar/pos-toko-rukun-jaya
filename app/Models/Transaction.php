@@ -20,6 +20,7 @@ class Transaction extends Model
         'subtotal_before_discount',
         'discount_amount',
         'total_amount',
+        'cash_received',
         'created_at',
     ];
 
@@ -30,6 +31,7 @@ class Transaction extends Model
             'subtotal_before_discount' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'cash_received' => 'decimal:2',
             'created_at' => 'datetime',
         ];
     }

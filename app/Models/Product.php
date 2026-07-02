@@ -15,7 +15,7 @@ class Product extends Model
     protected $fillable = [
         'name',
         'category_id',
-        'base_unit',
+        'base_unit_id',
         'cost_price_per_base_unit',
         'selling_price_per_base_unit',
         'stock_qty_base_unit',
@@ -58,6 +58,14 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the product's base unit.
+     */
+    public function baseUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'base_unit_id');
     }
 
     /**

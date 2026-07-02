@@ -10,7 +10,7 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'units'];
+    protected $fillable = ['name'];
 
     /**
      * Get all products in this category.

@@ -79,17 +79,23 @@ class SalesHistoryController extends Controller
         return response()->json([
             'id' => $transaction->id,
             'datetime' => $transaction->transaction_datetime->format('d/m/Y H:i'),
+            'time' => $transaction->transaction_datetime->format('H:i') . ' WIB',
+            'date' => $transaction->transaction_datetime->format('d/m/Y'),
             'cashier' => $transaction->cashier->name,
             'payment_method' => $transaction->payment_method,
             'subtotal' => (float) $transaction->subtotal_before_discount,
             'discount' => (float) $transaction->discount_amount,
             'total' => (float) $transaction->total_amount,
+            'cash_received' => (float) $transaction->cash_received,
+            'change' => $transaction->payment_method === 'tunai' 
+                ? (float) max(0, $transaction->cash_received - $transaction->total_amount) 
+                : 0.0,
             'items' => $transaction->items->map(fn ($i) => [
                 'product_name' => $i->product?->name ?? 'Produk Dihapus',
                 'unit' => $i->unit_name_at_transaction,
                 'qty' => (float) $i->qty_in_selected_unit,
                 'price' => (float) $i->price_per_unit_at_transaction,
-                'subtotal' => $i->subtotal,
+                'subtotal' => (float) $i->subtotal,
             ]),
         ]);
     }

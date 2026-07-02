@@ -38,7 +38,7 @@ class RestockController extends Controller
                 'product_name' => $r->product->name,
                 'product_category' => $r->product->category->name ?? '-',
                 'qty_base_unit' => (float) $r->qty_base_unit,
-                'base_unit' => $r->product->base_unit,
+                'base_unit' => $r->product->baseUnit->name ?? '-',
                 'unit_name' => $r->unit_name_at_restock,
                 'hpp' => (float) $r->cost_price_per_base_unit_at_restock,
                 'location' => $r->location,
@@ -47,7 +47,7 @@ class RestockController extends Controller
             ]);
 
         // Products with units for the restock form
-        $products = Product::with(['category', 'units'])
+        $products = Product::with(['category', 'baseUnit', 'units.unit'])
             ->active()
             ->orderBy('name')
             ->get()
@@ -55,13 +55,13 @@ class RestockController extends Controller
                 'id' => $p->id,
                 'name' => $p->name,
                 'category' => $p->category->name,
-                'base_unit' => $p->base_unit,
+                'base_unit' => $p->baseUnit->name,
                 'cost_price_per_base_unit' => (float) $p->cost_price_per_base_unit,
                 'stock_qty_base_unit' => (float) $p->stock_qty_base_unit,
                 'location' => $p->location,
                 'units' => $p->units->map(fn ($u) => [
                     'id' => $u->id,
-                    'unit_name' => $u->unit_name,
+                    'unit_name' => $u->unit->name,
                     'conversion_factor' => (float) $u->conversion_factor,
                 ]),
             ]);
@@ -163,6 +163,34 @@ class RestockController extends Controller
                     $weightedHPP = $newHPP;
                 }
 
+                $roundedWeightedHPP = round($weightedHPP, 2);
+
+                // Check if the new HPP causes base unit price to fall below HPP
+                if ($product->selling_price_per_base_unit < $roundedWeightedHPP) {
+                    throw new \Exception(
+                        "Restock gagal: HPP rata-rata baru (Rp " . number_format($roundedWeightedHPP, 0, ',', '.') . ") " .
+                        "melebihi harga jual dasar (Rp " . number_format($product->selling_price_per_base_unit, 0, ',', '.') . "). " .
+                        "Naikkan harga jual produk terlebih dahulu."
+                    );
+                }
+
+                // Check if the new HPP causes any alternative unit price to fall below HPP
+                foreach ($product->units as $pu) {
+                    $unitSellingPrice = $pu->selling_price !== null 
+                        ? (float) $pu->selling_price 
+                        : (float) round($product->selling_price_per_base_unit * $pu->conversion_factor);
+                    $unitHPP = (float) round($roundedWeightedHPP * $pu->conversion_factor, 2);
+                    
+                    if ($unitSellingPrice < $unitHPP) {
+                        throw new \Exception(
+                            "Restock gagal: HPP rata-rata baru mengakibatkan harga jual satuan alternatif '{$pu->unit->name}' " .
+                            "(Rp " . number_format($unitSellingPrice, 0, ',', '.') . ") kurang dari HPP-nya " .
+                            "(Rp " . number_format($unitHPP, 0, ',', '.') . "). " .
+                            "Naikkan harga jual produk/satuan alternatif terlebih dahulu."
+                        );
+                    }
+                }
+
                 // Create restock record
                 $restock = Restock::create([
                     'product_id' => $product->id,
@@ -177,7 +205,7 @@ class RestockController extends Controller
                 // Update product
                 $product->update([
                     'stock_qty_base_unit' => $oldStock + $qtyBaseUnit,
-                    'cost_price_per_base_unit' => round($weightedHPP, 2),
+                    'cost_price_per_base_unit' => $roundedWeightedHPP,
                     'location' => $validated['location'],
                 ]);
 
@@ -198,12 +226,12 @@ class RestockController extends Controller
                 // Build notification message
                 $prefix = $isAnomaly ? '⚠️ Restock perlu dicek:' : 'Restock:';
                 $qtyDisplay = number_format($validated['qty'], 0) . ' ' . $validated['unit_name'];
-                $qtyBaseDisplay = number_format($qtyBaseUnit, 0) . ' ' . $product->base_unit;
+                $qtyBaseDisplay = number_format($qtyBaseUnit, 0) . ' ' . $product->baseUnit->name;
                 $oldHppFormatted = $oldHPP > 0 ? 'Rp ' . number_format($oldHPP, 0, ',', '.') : '-';
                 $message = $prefix . "\n" .
                     "- " . $product->name . ' — ' . $qtyDisplay . ' (' . $qtyBaseDisplay . ') oleh ' . auth()->user()->name . ".\n" .
-                    'HPP Baru: Rp ' . number_format($newHPP, 0, ',', '.') . '/' . $product->base_unit .
-                    ' (HPP Lama: ' . $oldHppFormatted . '/' . $product->base_unit . ').';
+                    'HPP Baru: Rp ' . number_format($newHPP, 0, ',', '.') . '/' . $product->baseUnit->name .
+                    ' (HPP Lama: ' . $oldHppFormatted . '/' . $product->baseUnit->name . ').';
 
                 // Send notification to all owners
                 $owners = User::where('role', 'owner')->where('is_active', true)->get();

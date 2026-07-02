@@ -50,41 +50,36 @@ class DatabaseSeeder extends Seeder
         $users = [$owner, $karyawan1, $karyawan2];
 
         // ==============================
-        // 2. CATEGORIES (Smallest to Largest Units)
+        // 1.5. MASTER UNITS
+        // ==============================
+        $masterUnitsList = ['buah', 'pcs', 'lusin', 'box', 'batang', 'sak', 'kg', 'ton', 'lonjor', 'ikat'];
+        foreach ($masterUnitsList as $unitName) {
+            \App\Models\Unit::create(['name' => $unitName, 'symbol' => $unitName]);
+        }
+
+        // ==============================
+        // 2. CATEGORIES
         // ==============================
         $categories = [
-            'Aksesoris Rumah Tangga' => Category::create(['name' => 'Aksesoris Rumah Tangga', 'units' => 'buah, pcs, pack, lusin, box']),
-            'Bahan Bangunan' => Category::create(['name' => 'Bahan Bangunan', 'units' => 'pcs, batang, lembar, sak, kg, ton']),
-            'Sparepart Laptop' => Category::create(['name' => 'Sparepart Laptop', 'units' => 'pcs, box']),
+            'Aksesoris Rumah Tangga' => Category::create(['name' => 'Aksesoris Rumah Tangga']),
+            'Bahan Bangunan' => Category::create(['name' => 'Bahan Bangunan']),
+            'Sparepart Laptop' => Category::create(['name' => 'Sparepart Laptop']),
         ];
 
         // ==============================
         // 3. PRODUCTS + PRODUCT UNITS + INITIAL RESTOCKS
         // ==============================
         $productData = [
+            // --- Bahan Bangunan (3) ---
             [
                 'name' => 'Semen Tiga Roda',
                 'category' => 'Bahan Bangunan',
                 'base_unit' => 'kg',
-                'cost_price' => 2500,   // per kg
-                'selling_price' => 3200, // per kg
+                'cost_price' => 2500,
+                'selling_price' => 3200,
                 'location' => 'Gudang Muntilan',
                 'min_stock' => 500,
-                'initial_stock' => 2500, // 50 sak
-                'units' => [
-                    ['name' => 'sak', 'factor' => 50],    // 1 sak = 50 kg
-                    ['name' => 'ton', 'factor' => 1000],   // 1 ton = 1000 kg
-                ],
-            ],
-            [
-                'name' => 'Semen Holcim',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'kg',
-                'cost_price' => 2300,
-                'selling_price' => 3000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 500,
-                'initial_stock' => 2000, // 40 sak
+                'initial_stock' => 2500,
                 'units' => [
                     ['name' => 'sak', 'factor' => 50],
                     ['name' => 'ton', 'factor' => 1000],
@@ -99,20 +94,6 @@ class DatabaseSeeder extends Seeder
                 'location' => 'Gudang Muntilan',
                 'min_stock' => 20,
                 'initial_stock' => 100,
-                'units' => [
-                    ['name' => 'lonjor', 'factor' => 1],  // 1 lonjor = 1 batang
-                    ['name' => 'ikat', 'factor' => 12],    // 1 ikat = 12 batang
-                ],
-            ],
-            [
-                'name' => 'Besi Beton 10mm',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'batang',
-                'cost_price' => 65000,
-                'selling_price' => 78000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 15,
-                'initial_stock' => 60,
                 'units' => [
                     ['name' => 'lonjor', 'factor' => 1],
                     ['name' => 'ikat', 'factor' => 12],
@@ -132,20 +113,8 @@ class DatabaseSeeder extends Seeder
                     ['name' => 'lusin', 'factor' => 12],
                 ],
             ],
-            [
-                'name' => 'Pipa PVC AW 3/4"',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'batang',
-                'cost_price' => 35000,
-                'selling_price' => 45000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 15,
-                'initial_stock' => 50,
-                'units' => [
-                    ['name' => 'batang', 'factor' => 1],
-                    ['name' => 'lusin', 'factor' => 12],
-                ],
-            ],
+
+            // --- Sparepart Laptop (3) ---
             [
                 'name' => 'SSD V-Gen SATA 256GB',
                 'category' => 'Sparepart Laptop',
@@ -175,45 +144,20 @@ class DatabaseSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Paku Kayu 3 Inch',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'kg',
-                'cost_price' => 18000,
-                'selling_price' => 25000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 5,
-                'initial_stock' => 30,
+                'name' => 'Keyboard Laptop Universal',
+                'category' => 'Sparepart Laptop',
+                'base_unit' => 'pcs',
+                'cost_price' => 90000,
+                'selling_price' => 125000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 3,
+                'initial_stock' => 12,
                 'units' => [
-                    ['name' => 'dus', 'factor' => 10],   // 1 dus = 10 kg
+                    ['name' => 'pcs', 'factor' => 1],
                 ],
             ],
-            [
-                'name' => 'Seng Gelombang 180cm',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'lembar',
-                'cost_price' => 45000,
-                'selling_price' => 58000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 10,
-                'initial_stock' => 40,
-                'units' => [
-                    ['name' => 'lembar', 'factor' => 1],
-                    ['name' => 'kodi', 'factor' => 20],   // 1 kodi = 20 lembar
-                ],
-            ],
-            [
-                'name' => 'Triplek 12mm',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'lembar',
-                'cost_price' => 120000,
-                'selling_price' => 150000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 5,
-                'initial_stock' => 20,
-                'units' => [
-                    ['name' => 'lembar', 'factor' => 1],
-                ],
-            ],
+
+            // --- Aksesoris Rumah Tangga (3) ---
             [
                 'name' => 'Kran Air Stainless 1/2"',
                 'category' => 'Aksesoris Rumah Tangga',
@@ -229,19 +173,6 @@ class DatabaseSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Kawat Bendrat',
-                'category' => 'Bahan Bangunan',
-                'base_unit' => 'kg',
-                'cost_price' => 12000,
-                'selling_price' => 16000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 10,
-                'initial_stock' => 50,
-                'units' => [
-                    ['name' => 'roll', 'factor' => 25],   // 1 roll = 25 kg
-                ],
-            ],
-            [
                 'name' => 'Kuas Cat 3 Inch',
                 'category' => 'Aksesoris Rumah Tangga',
                 'base_unit' => 'buah',
@@ -249,24 +180,24 @@ class DatabaseSeeder extends Seeder
                 'selling_price' => 12000,
                 'location' => 'Etalase Depan',
                 'min_stock' => 10,
-                'initial_stock' => 3, // low stock
+                'initial_stock' => 20,
                 'units' => [
                     ['name' => 'buah', 'factor' => 1],
                     ['name' => 'lusin', 'factor' => 12],
                 ],
             ],
             [
-                'name' => 'Bata Ringan Hebel',
-                'category' => 'Bahan Bangunan',
+                'name' => 'Gembok Kuningan 40mm',
+                'category' => 'Aksesoris Rumah Tangga',
                 'base_unit' => 'buah',
-                'cost_price' => 8500,
-                'selling_price' => 11000,
-                'location' => 'Gudang Muntilan',
-                'min_stock' => 100,
-                'initial_stock' => 50, // low stock
+                'cost_price' => 15000,
+                'selling_price' => 22000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 15,
                 'units' => [
                     ['name' => 'buah', 'factor' => 1],
-                    ['name' => 'kubik', 'factor' => 133],  // ≈133 buah per m³
+                    ['name' => 'lusin', 'factor' => 12],
                 ],
             ],
         ];
@@ -274,10 +205,15 @@ class DatabaseSeeder extends Seeder
         $products = [];
 
         foreach ($productData as $pd) {
+            $baseUnitModel = \App\Models\Unit::firstOrCreate(
+                ['name' => trim(strtolower($pd['base_unit']))],
+                ['symbol' => trim(strtolower($pd['base_unit']))]
+            );
+
             $product = Product::create([
                 'name' => $pd['name'],
                 'category_id' => $categories[$pd['category']]->id,
-                'base_unit' => $pd['base_unit'],
+                'base_unit_id' => $baseUnitModel->id,
                 'cost_price_per_base_unit' => $pd['cost_price'],
                 'selling_price_per_base_unit' => $pd['selling_price'],
                 'stock_qty_base_unit' => $pd['initial_stock'],
@@ -288,9 +224,14 @@ class DatabaseSeeder extends Seeder
 
             // Create unit jual
             foreach ($pd['units'] as $unit) {
+                $altUnitModel = \App\Models\Unit::firstOrCreate(
+                    ['name' => trim(strtolower($unit['name']))],
+                    ['symbol' => trim(strtolower($unit['name']))]
+                );
+
                 ProductUnit::create([
                     'product_id' => $product->id,
-                    'unit_name' => $unit['name'],
+                    'unit_id' => $altUnitModel->id,
                     'conversion_factor' => $unit['factor'],
                 ]);
             }
@@ -345,95 +286,49 @@ class DatabaseSeeder extends Seeder
         // 5. SAMPLE TRANSACTIONS
         // ==============================
         $txnData = [
-            // Transaksi 1: Budi jual semen 3 sak + paku 2 kg (6 hari lalu)
+            // Transaksi 1: Budi jual semen 3 sak + besi beton 2 batang (6 hari lalu)
             [
                 'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 6,
                 'items' => [
                     ['product_idx' => 0, 'unit' => 'sak', 'qty' => 3],
-                    ['product_idx' => 8, 'unit' => 'kg', 'qty' => 2],
+                    ['product_idx' => 1, 'unit' => 'lonjor', 'qty' => 2],
                 ],
             ],
             // Transaksi 2: Siti jual besi beton 8mm 1 ikat (5 hari lalu)
             [
                 'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 0, 'days_ago' => 5,
                 'items' => [
-                    ['product_idx' => 2, 'unit' => 'ikat', 'qty' => 1],
+                    ['product_idx' => 1, 'unit' => 'ikat', 'qty' => 1],
                 ],
             ],
             // Transaksi 3: Owner jual SSD 2 pcs + kuas 3 buah, diskon 10.000 (4 hari lalu)
             [
                 'cashier' => $owner, 'method' => 'tunai', 'discount' => 10000, 'days_ago' => 4,
                 'items' => [
-                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
-                    ['product_idx' => 13, 'unit' => 'buah', 'qty' => 3],
+                    ['product_idx' => 3, 'unit' => 'pcs', 'qty' => 2],
+                    ['product_idx' => 7, 'unit' => 'buah', 'qty' => 3],
                 ],
             ],
             // Transaksi 4: Budi jual pipa 1/2" 5 batang (3 hari lalu)
             [
                 'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 3,
                 'items' => [
-                    ['product_idx' => 4, 'unit' => 'batang', 'qty' => 5],
+                    ['product_idx' => 2, 'unit' => 'batang', 'qty' => 5],
                 ],
             ],
-            // Transaksi 5: Siti jual seng 3 lembar + triplek 2 lembar (3 hari lalu)
-            [
-                'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 5000, 'days_ago' => 3,
-                'items' => [
-                    ['product_idx' => 9, 'unit' => 'lembar', 'qty' => 3],
-                    ['product_idx' => 10, 'unit' => 'lembar', 'qty' => 2],
-                ],
-            ],
-            // Transaksi 6: Owner jual semen holcim 5 sak (2 hari lalu)
-            [
-                'cashier' => $owner, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 2,
-                'items' => [
-                    ['product_idx' => 1, 'unit' => 'sak', 'qty' => 5],
-                ],
-            ],
-            // Transaksi 7: Budi jual kran air 6 buah + pipa 3/4" 3 batang (2 hari lalu)
-            [
-                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 15000, 'days_ago' => 2,
-                'items' => [
-                    ['product_idx' => 11, 'unit' => 'buah', 'qty' => 6],
-                    ['product_idx' => 5, 'unit' => 'batang', 'qty' => 3],
-                ],
-            ],
-            // Transaksi 8: Siti jual RAM 1 pcs (1 hari lalu)
+            // Transaksi 5: Siti jual RAM 1 pcs (1 hari lalu)
             [
                 'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 0, 'days_ago' => 1,
                 'items' => [
-                    ['product_idx' => 7, 'unit' => 'pcs', 'qty' => 1],
+                    ['product_idx' => 4, 'unit' => 'pcs', 'qty' => 1],
                 ],
             ],
-            // Transaksi 9: Budi jual besi 10mm 5 lonjor + kawat 1 roll (1 hari lalu)
-            [
-                'cashier' => $karyawan1, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 1,
-                'items' => [
-                    ['product_idx' => 3, 'unit' => 'lonjor', 'qty' => 5],
-                    ['product_idx' => 12, 'unit' => 'roll', 'qty' => 1],
-                ],
-            ],
-            // Transaksi 10: Owner jual semen tiga roda 2 sak + bata 20 buah (hari ini)
+            // Transaksi 6: Owner jual semen tiga roda 2 sak + kuas 5 buah (hari ini)
             [
                 'cashier' => $owner, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 0,
                 'items' => [
                     ['product_idx' => 0, 'unit' => 'sak', 'qty' => 2],
-                    ['product_idx' => 14, 'unit' => 'buah', 'qty' => 20],
-                ],
-            ],
-            // Transaksi 11: Budi jual pipa 1/2" 2 lusin (hari ini)
-            [
-                'cashier' => $karyawan1, 'method' => 'qris', 'discount' => 20000, 'days_ago' => 0,
-                'items' => [
-                    ['product_idx' => 4, 'unit' => 'lusin', 'qty' => 2],
-                ],
-            ],
-            // Transaksi 12: Siti jual SSD 2 pcs + paku 1 dus (hari ini)
-            [
-                'cashier' => $karyawan2, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 0,
-                'items' => [
-                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
-                    ['product_idx' => 8, 'unit' => 'dus', 'qty' => 1],
+                    ['product_idx' => 7, 'unit' => 'buah', 'qty' => 5],
                 ],
             ],
         ];
@@ -444,13 +339,14 @@ class DatabaseSeeder extends Seeder
 
             foreach ($tx['items'] as $item) {
                 $product = $products[$item['product_idx']];
-                $unit = ProductUnit::where('product_id', $product->id)
-                    ->where('unit_name', $item['unit'])
-                    ->first();
+                $targetUnit = \App\Models\Unit::where('name', $item['unit'])->first();
+                $unit = $targetUnit ? ProductUnit::where('product_id', $product->id)
+                    ->where('unit_id', $targetUnit->id)
+                    ->first() : null;
 
                 // If unit is the base unit itself
                 $conversionFactor = $unit ? $unit->conversion_factor : 1;
-                $unitName = $unit ? $unit->unit_name : $product->base_unit;
+                $unitName = $targetUnit ? $targetUnit->name : ($product->baseUnit->name ?? 'unit');
 
                 $pricePerUnit = $product->selling_price_per_base_unit * $conversionFactor;
                 $lineTotal = $pricePerUnit * $item['qty'];
@@ -469,13 +365,17 @@ class DatabaseSeeder extends Seeder
 
             $txnDatetime = now()->subDays($tx['days_ago'])->subHours(rand(1, 10));
 
+            $totalAmount = $subtotal - $tx['discount'];
+            $cashReceived = $tx['method'] === 'tunai' ? (float) (ceil($totalAmount / 50000) * 50000) : $totalAmount;
+
             $transaction = Transaction::create([
                 'cashier_user_id' => $tx['cashier']->id,
                 'transaction_datetime' => $txnDatetime,
                 'payment_method' => $tx['method'],
                 'subtotal_before_discount' => $subtotal,
                 'discount_amount' => $tx['discount'],
-                'total_amount' => $subtotal - $tx['discount'],
+                'total_amount' => $totalAmount,
+                'cash_received' => $cashReceived,
                 'created_at' => $txnDatetime,
             ]);
 

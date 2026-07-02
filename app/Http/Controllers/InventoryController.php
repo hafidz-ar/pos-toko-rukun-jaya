@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Restock;
 use App\Models\TransactionItem;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,7 +17,7 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'units'])
+        $query = Product::with(['category', 'baseUnit', 'units.unit'])
             ->active();
 
         // Search by name, category, or base_unit
@@ -51,7 +52,8 @@ class InventoryController extends Controller
                 'name' => $product->name,
                 'category' => $product->category->name,
                 'category_id' => $product->category_id,
-                'base_unit' => $product->base_unit,
+                'base_unit' => $product->baseUnit->name,
+                'base_unit_id' => $product->base_unit_id,
                 'stock_qty_base_unit' => (float) $product->stock_qty_base_unit,
                 'alt_stock_display' => $altDisplay,
                 'cost_price_per_base_unit' => (float) $product->cost_price_per_base_unit,
@@ -62,15 +64,17 @@ class InventoryController extends Controller
                 'is_low_stock' => $product->stock_qty_base_unit <= $product->min_stock_threshold,
                 'units' => $product->units->map(fn ($u) => [
                     'id' => $u->id,
-                    'unit_name' => $u->unit_name,
+                    'unit_id' => $u->unit_id,
+                    'unit_name' => $u->unit->name,
                     'conversion_factor' => (float) $u->conversion_factor,
-                    'selling_price' => (float) ($product->selling_price_per_base_unit * $u->conversion_factor),
+                    'selling_price' => $u->selling_price !== null ? (float) $u->selling_price : (float) round($product->selling_price_per_base_unit * $u->conversion_factor),
                 ]),
                 'prediction' => $this->predictStockDepletion($product),
             ];
         });
 
         $categories = Category::orderBy('name')->get();
+        $units = Unit::orderBy('name')->get();
 
         // Calculate active stats before pagination
         $stats = [
@@ -90,6 +94,7 @@ class InventoryController extends Controller
         return Inertia::render('Inventaris', [
             'products' => $products,
             'categories' => $categories,
+            'units' => $units,
             'stats' => $stats,
             'filters' => [
                 'search' => $request->get('search', ''),
@@ -180,13 +185,13 @@ class InventoryController extends Controller
     private function getAlternativeStockDisplay(Product $product): string
     {
         $stock = $product->stock_qty_base_unit;
-        $parts = [number_format($stock, 0) . ' ' . $product->base_unit];
+        $parts = [number_format($stock, 0) . ' ' . $product->baseUnit->name];
 
         foreach ($product->units as $unit) {
             if ($unit->conversion_factor > 1) {
                 $converted = $stock / $unit->conversion_factor;
                 if ($converted >= 0.1) {
-                    $parts[] = '≈ ' . number_format($converted, 1) . ' ' . $unit->unit_name;
+                    $parts[] = '≈ ' . number_format($converted, 1) . ' ' . $unit->unit->name;
                 }
             }
         }

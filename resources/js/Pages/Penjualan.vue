@@ -422,13 +422,34 @@ const goToPage = (url) => {
                             <span>Subtotal</span>
                             <span>{{ formatRupiah(detailData.subtotal) }}</span>
                         </div>
-                        <div v-if="detailData.discount > 0" class="flex justify-between text-sm text-secondary">
+                        <div class="flex justify-between text-sm text-secondary">
                             <span>Diskon</span>
-                            <span class="text-error">- {{ formatRupiah(detailData.discount) }}</span>
+                            <span :class="detailData.discount > 0 ? 'text-error' : ''">
+                                {{ detailData.discount > 0 ? '-' : '' }} {{ formatRupiah(detailData.discount) }}
+                            </span>
                         </div>
                         <div class="flex justify-between text-base font-bold text-on-surface pt-2 border-t border-outline-variant">
                             <span>TOTAL</span>
                             <span class="text-primary">{{ formatRupiah(detailData.total) }}</span>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="border-t border-dashed border-outline-variant my-3"></div>
+
+                        <!-- Payment Details -->
+                        <div class="pt-1 text-sm text-secondary space-y-1">
+                            <div class="flex">
+                                <span class="w-32 shrink-0">Metode Bayar</span>
+                                <span>: {{ detailData.payment_method === 'qris' ? 'QRIS' : 'Tunai' }}</span>
+                            </div>
+                            <div v-if="detailData.payment_method === 'tunai'" class="flex">
+                                <span class="w-32 shrink-0">Bayar</span>
+                                <span>: {{ formatRupiah(detailData.cash_received) }}</span>
+                            </div>
+                            <div v-if="detailData.payment_method === 'tunai'" class="flex">
+                                <span class="w-32 shrink-0">Kembalian</span>
+                                <span :class="detailData.change > 0 ? 'font-semibold text-primary' : ''">: {{ formatRupiah(detailData.change) }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

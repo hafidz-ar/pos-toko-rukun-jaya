@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\User;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -28,9 +29,12 @@ class SettingsController extends Controller
             ->orderBy('name')
             ->get();
 
+        $units = Unit::orderBy('name')->get();
+
         return Inertia::render('Pengaturan', [
             'users' => $users,
             'categories' => $categories,
+            'units' => $units,
         ]);
     }
 

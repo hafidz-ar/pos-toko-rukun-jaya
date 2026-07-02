@@ -6,6 +6,7 @@ const props = defineProps({
     auth: Object,
     products: Object,
     categories: Array,
+    units: Array,
     filters: Object,
     stats: Object,
 });
@@ -95,7 +96,7 @@ const showAddModal = ref(false);
 const addForm = reactive({
     name: '',
     category_id: '',
-    base_unit: '',
+    base_unit_id: '',
     cost_price_per_base_unit: '',
     selling_price_per_base_unit: '',
     stock_qty_base_unit: 0,
@@ -109,12 +110,11 @@ const addErrors = ref({});
 const isAddSubmitting = ref(false);
 const addPhotoPreviewUrl = ref('');
 
-const addCategoryUnits = computed(() => {
-    if (!addForm.category_id) return [];
-    const cat = props.categories.find(c => c.id === addForm.category_id);
-    if (!cat || !cat.units) return [];
-    return cat.units.split(',').map(u => u.trim()).filter(Boolean);
-});
+const getBaseUnitName = (id) => {
+    if (!id) return 'unit';
+    const u = props.units.find(x => x.id === id);
+    return u ? u.name : 'unit';
+};
 
 const handleAddPhotoChange = (e) => {
     const file = e.target.files[0];
@@ -128,7 +128,7 @@ const handleAddPhotoChange = (e) => {
 
 const openAddModal = () => {
     Object.assign(addForm, {
-        name: '', category_id: '', base_unit: '', cost_price_per_base_unit: '',
+        name: '', category_id: '', base_unit_id: '', cost_price_per_base_unit: '',
         selling_price_per_base_unit: '', stock_qty_base_unit: 0, location: '',
         photo_url: '', photo_file: null, min_stock_threshold: 10, units: [],
     });
@@ -138,7 +138,7 @@ const openAddModal = () => {
 };
 
 const addUnit = () => {
-    addForm.units.push({ unit_name: '', conversion_factor: '' });
+    addForm.units.push({ unit_id: '', conversion_factor: '', selling_price: '' });
 };
 const removeUnit = (i) => {
     addForm.units.splice(i, 1);
@@ -166,7 +166,7 @@ const editForm = reactive({
     id: null,
     name: '',
     category_id: '',
-    base_unit: '',
+    base_unit_id: '',
     selling_price_per_base_unit: '',
     location: '',
     photo_url: '',
@@ -177,13 +177,6 @@ const editForm = reactive({
 const editErrors = ref({});
 const isEditSubmitting = ref(false);
 const editPhotoPreviewUrl = ref('');
-
-const editCategoryUnits = computed(() => {
-    if (!editForm.category_id) return [];
-    const cat = props.categories.find(c => c.id === editForm.category_id);
-    if (!cat || !cat.units) return [];
-    return cat.units.split(',').map(u => u.trim()).filter(Boolean);
-});
 
 const handleEditPhotoChange = (e) => {
     const file = e.target.files[0];
@@ -200,13 +193,18 @@ const openEditModal = (product) => {
         id: product.id,
         name: product.name,
         category_id: product.category_id,
-        base_unit: product.base_unit,
+        base_unit_id: product.base_unit_id,
         selling_price_per_base_unit: product.selling_price_per_base_unit,
         location: product.location || '',
         photo_url: product.photo_url || '',
         photo_file: null,
         min_stock_threshold: product.min_stock_threshold || 10,
-        units: (product.units || []).map(u => ({ id: u.id, unit_name: u.unit_name, conversion_factor: u.conversion_factor })),
+        units: (product.units || []).map(u => ({ 
+            id: u.id, 
+            unit_id: u.unit_id, 
+            conversion_factor: u.conversion_factor,
+            selling_price: u.selling_price || '',
+        })),
     });
     editPhotoPreviewUrl.value = '';
     editErrors.value = {};
@@ -214,7 +212,7 @@ const openEditModal = (product) => {
 };
 
 const addEditUnit = () => {
-    editForm.units.push({ id: null, unit_name: '', conversion_factor: '' });
+    editForm.units.push({ id: null, unit_id: '', conversion_factor: '', selling_price: '' });
 };
 const removeEditUnit = (i) => {
     editForm.units.splice(i, 1);
@@ -229,7 +227,7 @@ const submitEdit = () => {
         _method: 'PUT',
         name: editForm.name,
         category_id: editForm.category_id,
-        base_unit: editForm.base_unit,
+        base_unit_id: editForm.base_unit_id,
         selling_price_per_base_unit: editForm.selling_price_per_base_unit,
         location: editForm.location,
         photo_url: editForm.photo_url,
@@ -596,11 +594,11 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <select v-model="addForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <select v-model="addForm.base_unit_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
                                 <option value="">Pilih Satuan</option>
-                                <option v-for="unit in addCategoryUnits" :key="unit" :value="unit">{{ unit }}</option>
+                                <option v-for="unit in props.units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                             </select>
-                            <p v-if="addCategoryUnits.length === 0" class="text-xs text-secondary mt-1">Daftarkan satuan di pengaturan kategori terlebih dahulu</p>
+                            <p v-if="addErrors.base_unit_id" class="text-error text-xs mt-1">{{ addErrors.base_unit_id }}</p>
                         </div>
 
                         <div>
@@ -641,24 +639,38 @@ const closeMovements = () => {
 
                         <!-- Unit Konversi -->
                         <div class="md:col-span-2">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-label-md font-bold text-secondary">Satuan Jual Alternatif</label>
+                            <div class="flex items-center justify-between mb-3 border-b border-outline-variant pb-2">
+                                <label class="text-label-md font-bold text-secondary">Satuan Jual Alternatif & Konversi</label>
                                 <button type="button" @click="addUnit" class="text-sm text-primary font-bold flex items-center gap-1 hover:underline">
-                                    <span class="material-symbols-outlined text-sm">add</span> Tambah Satuan
+                                    <span class="material-symbols-outlined text-sm">add</span> Tambah Satuan Alternatif
                                 </button>
                             </div>
-                            <div v-for="(unit, i) in addForm.units" :key="i" class="flex gap-3 mb-2 items-center">
-                                <select v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" required>
-                                    <option value="">Pilih Satuan</option>
-                                    <option v-for="u in addCategoryUnits" :key="u" :value="u" :disabled="u === addForm.base_unit">{{ u }}</option>
-                                </select>
-                                <span class="text-secondary text-sm">= </span>
-                                <input v-model="unit.conversion_factor" class="w-28 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Faktor (cth: 1000)" type="number" min="0.0001" step="any">
-                                <span class="text-secondary text-sm">{{ addForm.base_unit || 'unit' }}</span>
-                                <button type="button" @click="removeUnit(i)" class="text-error hover:text-error/80">
-                                    <span class="material-symbols-outlined text-sm">close</span>
+                            <p v-if="addForm.units.length === 0" class="text-xs text-secondary text-center py-4 bg-surface-container-lowest rounded border border-dashed border-outline-variant">Belum ada satuan alternatif ditambahkan.</p>
+                            
+                            <div v-for="(unit, i) in addForm.units" :key="i" class="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-center border border-outline-variant p-3 rounded bg-surface-container-lowest">
+                                <div class="flex-1 min-w-[120px]">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Satuan Jual</label>
+                                    <select v-model="unit.unit_id" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" required>
+                                        <option value="">Pilih Satuan</option>
+                                        <option v-for="u in props.units" :key="u.id" :value="u.id" :disabled="u.id === addForm.base_unit_id || addForm.units.some((x, idx) => idx !== i && x.unit_id === u.id)">{{ u.name }}</option>
+                                    </select>
+                                </div>
+                                <div class="w-24 shrink-0">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>
+                                    <input v-model="unit.conversion_factor" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Faktor" type="number" min="0.0001" max="1000000" step="any" required>
+                                </div>
+                                <div class="flex items-end pb-2 text-secondary text-xs font-bold shrink-0 self-end h-[38px]">
+                                    = {{ unit.conversion_factor || 'X' }} {{ getBaseUnitName(addForm.base_unit_id) }}
+                                </div>
+                                <div class="w-32 shrink-0">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Harga Jual (Rp)</label>
+                                    <input v-model="unit.selling_price" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Dihitung otomatis" type="number" min="0">
+                                </div>
+                                <button type="button" @click="removeUnit(i)" class="text-error hover:text-error/80 shrink-0 self-end pb-2">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
                                 </button>
                             </div>
+                            <p v-if="addErrors.units" class="text-error text-xs mt-1">{{ addErrors.units }}</p>
                         </div>
                     </form>
                 </div>
@@ -706,11 +718,10 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <select v-model="editForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <select v-model="editForm.base_unit_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
                                 <option value="">Pilih Satuan</option>
-                                <option v-for="unit in editCategoryUnits" :key="unit" :value="unit">{{ unit }}</option>
+                                <option v-for="unit in props.units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
                             </select>
-                            <p v-if="editCategoryUnits.length === 0" class="text-xs text-secondary mt-1">Daftarkan satuan di pengaturan kategori terlebih dahulu</p>
                         </div>
 
                         <div>
@@ -746,24 +757,38 @@ const closeMovements = () => {
 
                         <!-- Unit Konversi -->
                         <div class="md:col-span-2">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-label-md font-bold text-secondary">Satuan Jual Alternatif</label>
+                            <div class="flex items-center justify-between mb-3 border-b border-outline-variant pb-2">
+                                <label class="text-label-md font-bold text-secondary">Satuan Jual Alternatif & Konversi</label>
                                 <button type="button" @click="addEditUnit" class="text-sm text-primary font-bold flex items-center gap-1 hover:underline">
-                                    <span class="material-symbols-outlined text-sm">add</span> Tambah Satuan
+                                    <span class="material-symbols-outlined text-sm">add</span> Tambah Satuan Alternatif
                                 </button>
                             </div>
-                            <div v-for="(unit, i) in editForm.units" :key="i" class="flex gap-3 mb-2 items-center">
-                                <select v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" required>
-                                    <option value="">Pilih Satuan</option>
-                                    <option v-for="u in editCategoryUnits" :key="u" :value="u" :disabled="u === editForm.base_unit">{{ u }}</option>
-                                </select>
-                                <span class="text-secondary text-sm">= </span>
-                                <input v-model="unit.conversion_factor" class="w-28 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Faktor" type="number" min="0.0001" step="any">
-                                <span class="text-secondary text-sm">{{ editForm.base_unit || 'unit' }}</span>
-                                <button type="button" @click="removeEditUnit(i)" class="text-error hover:text-error/80">
-                                    <span class="material-symbols-outlined text-sm">close</span>
+                            <p v-if="editForm.units.length === 0" class="text-xs text-secondary text-center py-4 bg-surface-container-lowest rounded border border-dashed border-outline-variant">Belum ada satuan alternatif ditambahkan.</p>
+                            
+                            <div v-for="(unit, i) in editForm.units" :key="i" class="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-center border border-outline-variant p-3 rounded bg-surface-container-lowest">
+                                <div class="flex-1 min-w-[120px]">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Satuan Jual</label>
+                                    <select v-model="unit.unit_id" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" required>
+                                        <option value="">Pilih Satuan</option>
+                                        <option v-for="u in props.units" :key="u.id" :value="u.id" :disabled="u.id === editForm.base_unit_id || editForm.units.some((x, idx) => idx !== i && x.unit_id === u.id)">{{ u.name }}</option>
+                                    </select>
+                                </div>
+                                <div class="w-24 shrink-0">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>
+                                    <input v-model="unit.conversion_factor" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Faktor" type="number" min="0.0001" max="1000000" step="any" required>
+                                </div>
+                                <div class="flex items-end pb-2 text-secondary text-xs font-bold shrink-0 self-end h-[38px]">
+                                    = {{ unit.conversion_factor || 'X' }} {{ getBaseUnitName(editForm.base_unit_id) }}
+                                </div>
+                                <div class="w-32 shrink-0">
+                                    <label class="block text-xs font-bold text-secondary mb-1">Harga Jual (Rp)</label>
+                                    <input v-model="unit.selling_price" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Dihitung otomatis" type="number" min="0">
+                                </div>
+                                <button type="button" @click="removeEditUnit(i)" class="text-error hover:text-error/80 shrink-0 self-end pb-2">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
                                 </button>
                             </div>
+                            <p v-if="editErrors.units" class="text-error text-xs mt-1">{{ editErrors.units }}</p>
                         </div>
                     </form>
                 </div>

@@ -12,14 +12,16 @@ class ProductUnit extends Model
 
     protected $fillable = [
         'product_id',
-        'unit_name',
+        'unit_id',
         'conversion_factor',
+        'selling_price',
     ];
 
     protected function casts(): array
     {
         return [
             'conversion_factor' => 'decimal:4',
+            'selling_price' => 'decimal:2',
         ];
     }
 
@@ -29,5 +31,13 @@ class ProductUnit extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the master unit.
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 }

@@ -6,6 +6,7 @@ const props = defineProps({
     auth: Object,
     users: Array,
     categories: Array,
+    units: Array,
 });
 
 // Toast
@@ -96,14 +97,13 @@ const deactivateUser = (user) => {
 // ────────── Manajemen Kategori ──────────
 const showAddCatModal = ref(false);
 const showEditCatModal = ref(false);
-const catForm = reactive({ name: '', units: '' });
-const editCatForm = reactive({ id: null, name: '', units: '' });
+const catForm = reactive({ name: '' });
+const editCatForm = reactive({ id: null, name: '' });
 const catErrors = ref({});
 const isCatSubmitting = ref(false);
 
 const openAddCat = () => {
     catForm.name = '';
-    catForm.units = '';
     catErrors.value = {};
     showAddCatModal.value = true;
 };
@@ -117,7 +117,7 @@ const submitAddCat = () => {
 };
 
 const openEditCat = (cat) => {
-    Object.assign(editCatForm, { id: cat.id, name: cat.name, units: cat.units || '' });
+    Object.assign(editCatForm, { id: cat.id, name: cat.name });
     catErrors.value = {};
     showEditCatModal.value = true;
 };
@@ -134,6 +134,62 @@ const deleteCategory = (cat) => {
         router.delete(`/categories/${cat.id}`, {
             onSuccess: () => triggerToast('Kategori dihapus.'),
             onError: () => triggerToast('Gagal: Kategori masih digunakan produk aktif.'),
+        });
+    }
+};
+
+// ────────── Manajemen Satuan ──────────
+const showAddUnitModal = ref(false);
+const showEditUnitModal = ref(false);
+const isUnitSubmitting = ref(false);
+const unitForm = reactive({ name: '', symbol: '' });
+const editUnitForm = reactive({ id: null, name: '', symbol: '' });
+const unitErrors = ref({});
+
+const openAddUnit = () => {
+    unitForm.name = '';
+    unitForm.symbol = '';
+    unitErrors.value = {};
+    showAddUnitModal.value = true;
+};
+const submitAddUnit = () => {
+    isUnitSubmitting.value = true;
+    unitErrors.value = {};
+    router.post('/units', unitForm, {
+        onSuccess: () => { showAddUnitModal.value = false; triggerToast('Satuan berhasil ditambahkan!'); },
+        onError: (err) => { unitErrors.value = err; },
+        onFinish: () => { isUnitSubmitting.value = false; },
+    });
+};
+
+const openEditUnit = (unit) => {
+    Object.assign(editUnitForm, { id: unit.id, name: unit.name, symbol: unit.symbol || '' });
+    unitErrors.value = {};
+    showEditUnitModal.value = true;
+};
+const submitEditUnit = () => {
+    isUnitSubmitting.value = true;
+    unitErrors.value = {};
+    router.put(`/units/${editUnitForm.id}`, editUnitForm, {
+        onSuccess: () => { showEditUnitModal.value = false; triggerToast('Satuan berhasil diperbarui!'); },
+        onError: (err) => { unitErrors.value = err; },
+        onFinish: () => { isUnitSubmitting.value = false; },
+    });
+};
+
+const deleteUnit = (unit) => {
+    if (confirm(`Hapus satuan "${unit.name}"? Hanya bisa dihapus jika tidak digunakan oleh produk mana pun.`)) {
+        router.delete(`/units/${unit.id}`, {
+            onSuccess: () => triggerToast('Satuan berhasil dihapus.'),
+            onError: (err) => {
+                if (err.error) {
+                    triggerToast('Gagal: ' + err.error);
+                } else if (err.name) {
+                    triggerToast('Gagal: ' + err.name);
+                } else {
+                    triggerToast('Gagal menghapus satuan.');
+                }
+            }
         });
     }
 };
@@ -334,9 +390,13 @@ const linkTelegram = () => {
                                 <span class="material-symbols-outlined">group</span>
                                 <span class="font-label-md text-label-md">Manajemen User</span>
                             </button>
-                            <button @click="switchTab('manajemen-kategori')" :class="['w-full flex items-center space-x-3 px-4 py-4 text-left transition-all', activeTab === 'manajemen-kategori' ? 'active-tab font-bold' : 'text-secondary hover:bg-surface-container']">
+                             <button @click="switchTab('manajemen-kategori')" :class="['w-full flex items-center space-x-3 px-4 py-4 text-left transition-all', activeTab === 'manajemen-kategori' ? 'active-tab font-bold' : 'text-secondary hover:bg-surface-container']">
                                 <span class="material-symbols-outlined">category</span>
                                 <span class="font-label-md text-label-md">Manajemen Kategori</span>
+                            </button>
+                            <button @click="switchTab('manajemen-satuan')" :class="['w-full flex items-center space-x-3 px-4 py-4 text-left transition-all', activeTab === 'manajemen-satuan' ? 'active-tab font-bold' : 'text-secondary hover:bg-surface-container']">
+                                <span class="material-symbols-outlined">straighten</span>
+                                <span class="font-label-md text-label-md">Manajemen Satuan</span>
                             </button>
                             <button @click="switchTab('telegram')" :class="['w-full flex items-center space-x-3 px-4 py-4 text-left transition-all', activeTab === 'telegram' ? 'active-tab font-bold' : 'text-secondary hover:bg-surface-container']">
                                 <span class="material-symbols-outlined">send</span>
@@ -411,7 +471,7 @@ const linkTelegram = () => {
                             </div>
                         </section>
 
-                        <!-- 2. Manajemen Kategori -->
+                         <!-- 2. Manajemen Kategori -->
                         <section v-if="activeTab === 'manajemen-kategori'" class="space-y-gutter">
                             <div class="flex justify-between items-end border-b border-outline-variant pb-base mb-base">
                                 <div>
@@ -428,18 +488,16 @@ const linkTelegram = () => {
                                     <thead class="bg-surface-container-high border-b border-outline-variant">
                                         <tr>
                                             <th class="px-6 py-4 text-label-md font-label-md">Nama Kategori</th>
-                                            <th class="px-6 py-4 text-label-md font-label-md">Satuan Terdaftar</th>
                                             <th class="px-6 py-4 text-label-md font-label-md text-right">Jumlah Produk</th>
                                             <th class="px-6 py-4 text-label-md font-label-md text-center">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-outline-variant">
                                         <tr v-if="!props.categories || props.categories.length === 0">
-                                            <td colspan="4" class="px-6 py-8 text-center text-secondary">Belum ada kategori.</td>
+                                            <td colspan="3" class="px-6 py-8 text-center text-secondary">Belum ada kategori.</td>
                                         </tr>
                                         <tr v-for="cat in props.categories" :key="cat.id" class="hover:bg-surface-container-low transition-colors">
                                             <td class="px-6 py-4 font-bold text-on-surface">{{ cat.name }}</td>
-                                            <td class="px-6 py-4 text-sm text-secondary">{{ cat.units || '-' }}</td>
                                             <td class="px-6 py-4 text-right">
                                                 <span class="bg-surface-container-high px-3 py-1 rounded-full text-sm font-bold">{{ cat.products_count || 0 }}</span>
                                             </td>
@@ -447,6 +505,46 @@ const linkTelegram = () => {
                                                 <div class="flex items-center justify-center space-x-2">
                                                     <button @click="openEditCat(cat)" class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit">edit</button>
                                                     <button @click="deleteCategory(cat)" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Hapus">delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <!-- 2.5. Manajemen Satuan -->
+                        <section v-if="activeTab === 'manajemen-satuan'" class="space-y-gutter">
+                            <div class="flex justify-between items-end border-b border-outline-variant pb-base mb-base">
+                                <div>
+                                    <h3 class="text-label-xl font-label-xl text-on-surface">Manajemen Master Satuan</h3>
+                                    <p class="text-body-md text-secondary">Kelola master satuan global untuk inventori produk.</p>
+                                </div>
+                                <button @click="openAddUnit" class="btn-primary-industrial font-bold px-6 py-2 rounded-lg flex items-center space-x-2">
+                                    <span class="material-symbols-outlined">add</span>
+                                    <span>Tambah Satuan</span>
+                                </button>
+                            </div>
+                            <div class="bg-surface border-2 border-outline-variant rounded-xl overflow-hidden">
+                                <table class="w-full text-left">
+                                    <thead class="bg-surface-container-high border-b border-outline-variant">
+                                        <tr>
+                                            <th class="px-6 py-4 text-label-md font-label-md">Nama Satuan</th>
+                                            <th class="px-6 py-4 text-label-md font-label-md">Simbol / Singkatan</th>
+                                            <th class="px-6 py-4 text-label-md font-label-md text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-outline-variant">
+                                        <tr v-if="!props.units || props.units.length === 0">
+                                            <td colspan="3" class="px-6 py-8 text-center text-secondary">Belum ada satuan.</td>
+                                        </tr>
+                                        <tr v-for="unit in props.units" :key="unit.id" class="hover:bg-surface-container-low transition-colors">
+                                            <td class="px-6 py-4 font-bold text-on-surface">{{ unit.name }}</td>
+                                            <td class="px-6 py-4 text-secondary">{{ unit.symbol || '-' }}</td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <button @click="openEditUnit(unit)" class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit">edit</button>
+                                                    <button @click="deleteUnit(unit)" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Hapus">delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -721,11 +819,6 @@ const linkTelegram = () => {
                         <input v-model="catForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: Semen, Pipa, Cat..." required>
                         <p v-if="catErrors.name" class="text-error text-xs mt-1">{{ catErrors.name }}</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-bold text-secondary mb-1">Daftar Satuan (pisahkan dengan koma)</label>
-                        <input v-model="catForm.units" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, ton, batang, pcs">
-                        <p v-if="catErrors.units" class="text-error text-xs mt-1">{{ catErrors.units }}</p>
-                    </div>
                     <div class="flex justify-end gap-3">
                         <button @click="showAddCatModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
                         <button @click="submitAddCat" :disabled="isCatSubmitting" class="btn-primary-industrial px-6 py-2.5 rounded font-bold disabled:opacity-50">
@@ -751,15 +844,70 @@ const linkTelegram = () => {
                         <input v-model="editCatForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
                         <p v-if="catErrors.name" class="text-error text-xs mt-1">{{ catErrors.name }}</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-bold text-secondary mb-1">Daftar Satuan (pisahkan dengan koma)</label>
-                        <input v-model="editCatForm.units" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, ton, batang, pcs">
-                        <p v-if="catErrors.units" class="text-error text-xs mt-1">{{ catErrors.units }}</p>
-                    </div>
                     <div class="flex justify-end gap-3">
                         <button @click="showEditCatModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
                         <button @click="submitEditCat" :disabled="isCatSubmitting" class="btn-primary-industrial px-6 py-2.5 rounded font-bold disabled:opacity-50">
                             {{ isCatSubmitting ? 'Menyimpan...' : 'Simpan' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
+    <!-- Modal Tambah Satuan -->
+    <Transition name="fade">
+        <div v-if="showAddUnitModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="showAddUnitModal = false">
+            <div class="bg-surface w-full max-w-sm border-2 border-outline rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-6 py-4 bg-surface-container-high border-b border-outline-variant flex justify-between items-center">
+                    <h3 class="font-bold text-on-surface">Tambah Satuan</h3>
+                    <button @click="showAddUnitModal = false" class="text-secondary hover:text-error"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Nama Satuan *</label>
+                        <input v-model="unitForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, pcs, box..." required>
+                        <p v-if="unitErrors.name" class="text-error text-xs mt-1">{{ unitErrors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Simbol / Singkatan</label>
+                        <input v-model="unitForm.symbol" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: kg, sak, box">
+                        <p v-if="unitErrors.symbol" class="text-error text-xs mt-1">{{ unitErrors.symbol }}</p>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button @click="showAddUnitModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
+                        <button @click="submitAddUnit" :disabled="isUnitSubmitting" class="btn-primary-industrial px-6 py-2.5 rounded font-bold disabled:opacity-50">
+                            {{ isUnitSubmitting ? 'Menyimpan...' : 'Simpan' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
+    <!-- Modal Edit Satuan -->
+    <Transition name="fade">
+        <div v-if="showEditUnitModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="showEditUnitModal = false">
+            <div class="bg-surface w-full max-w-sm border-2 border-outline rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-6 py-4 bg-surface-container-high border-b border-outline-variant flex justify-between items-center">
+                    <h3 class="font-bold text-on-surface">Edit Satuan</h3>
+                    <button @click="showEditUnitModal = false" class="text-secondary hover:text-error"><span class="material-symbols-outlined">close</span></button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Nama Satuan *</label>
+                        <input v-model="editUnitForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                        <p v-if="unitErrors.name" class="text-error text-xs mt-1">{{ unitErrors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Simbol / Singkatan</label>
+                        <input v-model="editUnitForm.symbol" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary">
+                        <p v-if="unitErrors.symbol" class="text-error text-xs mt-1">{{ unitErrors.symbol }}</p>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button @click="showEditUnitModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
+                        <button @click="submitEditUnit" :disabled="isUnitSubmitting" class="btn-primary-industrial px-6 py-2.5 rounded font-bold disabled:opacity-50">
+                            {{ isUnitSubmitting ? 'Menyimpan...' : 'Simpan' }}
                         </button>
                     </div>
                 </div>

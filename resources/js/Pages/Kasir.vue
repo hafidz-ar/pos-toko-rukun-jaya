@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     products: Array,
+    categories: Array,
     auth: Object,
 });
 
@@ -11,6 +12,7 @@ const showConfirmationModal = ref(false);
 const showReceiptModal = ref(false);
 const selectedPaymentMethod = ref('tunai');
 const searchQuery = ref('');
+const selectedCategory = ref('');
 const cart = ref([]);
 const discount = ref(0);
 const isSubmitting = ref(false);
@@ -23,12 +25,25 @@ const showUnitModal = ref(false);
 const pendingProduct = ref(null);
 
 const filteredProducts = computed(() => {
-    if (!searchQuery.value) return props.products || [];
-    const query = searchQuery.value.toLowerCase();
-    return (props.products || []).filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query)
-    );
+    let result = props.products || [];
+
+    // Filter by Category
+    if (selectedCategory.value) {
+        result = result.filter(p => p.category === selectedCategory.value);
+    }
+
+    // Search query (name, category, SKU)
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        result = result.filter(p => {
+            const sku = 'sku-' + p.id.toString().padStart(4, '0');
+            return p.name.toLowerCase().includes(query) ||
+                p.category.toLowerCase().includes(query) ||
+                sku.includes(query);
+        });
+    }
+
+    return result;
 });
 
 // Buka modal pilih unit sebelum tambah ke keranjang
@@ -161,6 +176,7 @@ const confirmPayment = () => {
         })),
         payment_method: selectedPaymentMethod.value,
         discount_amount: discount.value || 0,
+        cash_received: selectedPaymentMethod.value === 'tunai' ? cashInput.value : totalAmount.value,
     };
 
     fetch('/kasir/store', {
@@ -267,10 +283,17 @@ onUnmounted(() => {
             <!-- Left Column: Daftar Produk (70%) -->
             <section class="w-[70%] flex flex-col border-r border-outline-variant bg-surface-container-low overflow-hidden">
                 <div class="p-gutter flex flex-col h-full bg-surface-container-low">
-                    <div class="flex gap-2 mb-gutter">
+                    <div class="flex gap-3 mb-gutter">
                         <div class="relative flex-grow">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
-                            <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari produk berdasarkan nama atau kategori..." type="text"/>
+                            <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari berdasarkan nama, kategori, atau SKU..." type="text"/>
+                        </div>
+                        <div class="relative shrink-0 w-52">
+                            <select v-model="selectedCategory" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none cursor-pointer">
+                                <option value="">Semua Kategori</option>
+                                <option v-for="cat in props.categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
                         </div>
                     </div>
                     
@@ -289,7 +312,10 @@ onUnmounted(() => {
                                 </div>
                                 <div class="flex-grow min-w-0">
                                     <p class="text-body-lg font-bold text-on-surface truncate">{{ product.name }}</p>
-                                    <p class="text-xs text-outline truncate">Stok: {{ product.stock_qty_base_unit }} {{ product.base_unit }} | Kat: {{ product.category }} | Lokasi: {{ product.location || '-' }}</p>
+                                    <p class="text-xs text-outline truncate">
+                                        <span class="font-mono text-xs text-primary font-bold tracking-wider mr-2 bg-surface-container px-1.5 py-0.5 rounded">SKU-{{ product.id.toString().padStart(4, '0') }}</span>
+                                        Stok: {{ product.stock_qty_base_unit }} {{ product.base_unit }} | Kat: {{ product.category }} | Lokasi: {{ product.location || '-' }}
+                                    </p>
                                     <p class="text-body-md font-bold text-primary mt-1">{{ formatRupiah(product.selling_price_per_base_unit) }} / {{ product.base_unit }}</p>
                                     <p v-if="product.units && product.units.length > 0" class="text-xs text-secondary mt-0.5">
                                         + {{ product.units.length }} satuan lain tersedia
@@ -497,22 +523,39 @@ onUnmounted(() => {
                             <div class="pl-4 italic text-gray-500">{{ item.qty }} {{ item.unit }} x {{ new Intl.NumberFormat('id-ID').format(item.price) }}</div>
                         </template>
                     </div>
-                    <div class="border-t border-dashed border-gray-300 pt-4 space-y-1 text-sm">
+                    <div class="border-t border-dashed border-gray-300 pt-4 space-y-1 text-xs">
                         <div class="flex justify-between">
-                            <span>SUBTOTAL</span>
-                            <span>{{ new Intl.NumberFormat('id-ID').format(receiptData.subtotal) }}</span>
+                            <span>Subtotal</span>
+                            <span>{{ formatRupiah(receiptData.subtotal) }}</span>
                         </div>
-                        <div v-if="receiptData.discount > 0" class="flex justify-between">
-                            <span>DISKON</span>
-                            <span>- {{ new Intl.NumberFormat('id-ID').format(receiptData.discount) }}</span>
+                        <div class="flex justify-between">
+                            <span>Diskon</span>
+                            <span :class="receiptData.discount > 0 ? 'text-red-600' : ''">
+                                {{ receiptData.discount > 0 ? '-' : '' }} {{ formatRupiah(receiptData.discount) }}
+                            </span>
                         </div>
-                        <div class="flex justify-between font-bold text-lg pt-2">
+                        <div class="flex justify-between font-bold text-sm pt-2 border-t border-gray-300">
                             <span>TOTAL</span>
-                            <span>{{ new Intl.NumberFormat('id-ID').format(receiptData.total) }}</span>
+                            <span>{{ formatRupiah(receiptData.total) }}</span>
                         </div>
-                        <div class="flex justify-between text-xs text-gray-500">
-                            <span>Metode</span>
-                            <span>{{ receiptData.payment_method === 'tunai' ? 'Tunai' : 'QRIS' }}</span>
+
+                        <!-- Divider -->
+                        <div class="border-t border-dashed border-gray-300 my-3"></div>
+
+                        <!-- Payment Details -->
+                        <div class="pt-1 text-xs space-y-1">
+                            <div class="flex">
+                                <span class="w-28 shrink-0">Metode Bayar</span>
+                                <span>: {{ receiptData.payment_method === 'qris' ? 'QRIS' : 'Tunai' }}</span>
+                            </div>
+                            <div v-if="receiptData.payment_method === 'tunai'" class="flex">
+                                <span class="w-28 shrink-0">Bayar</span>
+                                <span>: {{ formatRupiah(receiptData.cash_received) }}</span>
+                            </div>
+                            <div v-if="receiptData.payment_method === 'tunai'" class="flex">
+                                <span class="w-28 shrink-0">Kembalian</span>
+                                <span :class="receiptData.change > 0 ? 'font-bold' : ''">: {{ formatRupiah(receiptData.change) }}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-4 text-center text-[10px] text-gray-500">

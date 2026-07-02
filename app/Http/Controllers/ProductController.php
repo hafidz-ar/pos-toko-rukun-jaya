@@ -45,7 +45,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'base_unit' => 'required|string|max:50',
+            'base_unit_id' => 'required|exists:units,id',
             'cost_price_per_base_unit' => 'required|numeric|min:0',
             'selling_price_per_base_unit' => 'required|numeric|min:0',
             'stock_qty_base_unit' => 'nullable|numeric|min:0',
@@ -54,9 +54,37 @@ class ProductController extends Controller
             'photo_file' => 'nullable|image|max:5120', // Max 5MB
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
-            'units.*.unit_name' => 'required_with:units|string|max:50',
-            'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001',
+            'units.*.unit_id' => 'required_with:units|exists:units,id',
+            'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001|max:1000000',
+            'units.*.selling_price' => 'nullable|numeric|min:0',
         ]);
+
+        // Business validations
+        if ($validated['selling_price_per_base_unit'] < $validated['cost_price_per_base_unit']) {
+            return back()->withErrors(['selling_price_per_base_unit' => 'Harga jual tidak boleh kurang dari harga HPP.']);
+        }
+
+        if (!empty($validated['units'])) {
+            $unitIds = [];
+            foreach ($validated['units'] as $unit) {
+                if ($validated['base_unit_id'] == $unit['unit_id']) {
+                    return back()->withErrors(['units' => 'Satuan dasar tidak boleh sama dengan satuan alternatif.']);
+                }
+
+                if (isset($unit['selling_price']) && $unit['selling_price'] !== null && $unit['selling_price'] !== '') {
+                    $unitHpp = $unit['conversion_factor'] * $validated['cost_price_per_base_unit'];
+                    if ($unit['selling_price'] < $unitHpp) {
+                        $unitModel = \App\Models\Unit::find($unit['unit_id']);
+                        $unitName = $unitModel ? $unitModel->name : 'alternatif';
+                        return back()->withErrors(['units' => "Harga jual satuan alternatif '{$unitName}' tidak boleh kurang dari harga HPP (Rp " . number_format($unitHpp, 0, ',', '.') . ")."]);
+                    }
+                }
+                $unitIds[] = $unit['unit_id'];
+            }
+            if (count($unitIds) !== count(array_unique($unitIds))) {
+                return back()->withErrors(['units' => 'Satuan alternatif tidak boleh duplikat.']);
+            }
+        }
 
         $photoUrl = $validated['photo_url'] ?? null;
 
@@ -71,7 +99,7 @@ class ProductController extends Controller
         $product = Product::create([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
-            'base_unit' => $validated['base_unit'],
+            'base_unit_id' => $validated['base_unit_id'],
             'cost_price_per_base_unit' => $validated['cost_price_per_base_unit'],
             'selling_price_per_base_unit' => $validated['selling_price_per_base_unit'],
             'stock_qty_base_unit' => $validated['stock_qty_base_unit'] ?? 0,
@@ -85,8 +113,9 @@ class ProductController extends Controller
             foreach ($validated['units'] as $unit) {
                 ProductUnit::create([
                     'product_id' => $product->id,
-                    'unit_name' => $unit['unit_name'],
+                    'unit_id' => $unit['unit_id'],
                     'conversion_factor' => $unit['conversion_factor'],
+                    'selling_price' => $unit['selling_price'] ?? null,
                 ]);
             }
         }
@@ -103,7 +132,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'base_unit' => 'required|string|max:50',
+            'base_unit_id' => 'required|exists:units,id',
             'selling_price_per_base_unit' => 'required|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'photo_url' => 'nullable|url|max:500',
@@ -111,9 +140,37 @@ class ProductController extends Controller
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
             'units.*.id' => 'nullable|integer',
-            'units.*.unit_name' => 'required_with:units|string|max:50',
-            'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001',
+            'units.*.unit_id' => 'required_with:units|exists:units,id',
+            'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001|max:1000000',
+            'units.*.selling_price' => 'nullable|numeric|min:0',
         ]);
+
+        // Business validations
+        if ($validated['selling_price_per_base_unit'] < $product->cost_price_per_base_unit) {
+            return back()->withErrors(['selling_price_per_base_unit' => 'Harga jual tidak boleh kurang dari harga HPP.']);
+        }
+
+        if (!empty($validated['units'])) {
+            $unitIds = [];
+            foreach ($validated['units'] as $unit) {
+                if ($validated['base_unit_id'] == $unit['unit_id']) {
+                    return back()->withErrors(['units' => 'Satuan dasar tidak boleh sama dengan satuan alternatif.']);
+                }
+
+                if (isset($unit['selling_price']) && $unit['selling_price'] !== null && $unit['selling_price'] !== '') {
+                    $unitHpp = $unit['conversion_factor'] * $product->cost_price_per_base_unit;
+                    if ($unit['selling_price'] < $unitHpp) {
+                        $unitModel = \App\Models\Unit::find($unit['unit_id']);
+                        $unitName = $unitModel ? $unitModel->name : 'alternatif';
+                        return back()->withErrors(['units' => "Harga jual satuan alternatif '{$unitName}' tidak boleh kurang dari harga HPP (Rp " . number_format($unitHpp, 0, ',', '.') . ")."]);
+                    }
+                }
+                $unitIds[] = $unit['unit_id'];
+            }
+            if (count($unitIds) !== count(array_unique($unitIds))) {
+                return back()->withErrors(['units' => 'Satuan alternatif tidak boleh duplikat.']);
+            }
+        }
 
         $photoUrl = $product->photo_url;
 
@@ -131,7 +188,7 @@ class ProductController extends Controller
         $product->update([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
-            'base_unit' => $validated['base_unit'],
+            'base_unit_id' => $validated['base_unit_id'],
             'selling_price_per_base_unit' => $validated['selling_price_per_base_unit'],
             'location' => $validated['location'] ?? $product->location,
             'photo_url' => $photoUrl,
@@ -147,14 +204,16 @@ class ProductController extends Controller
             foreach ($validated['units'] as $unitData) {
                 if (!empty($unitData['id'])) {
                     ProductUnit::where('id', $unitData['id'])->update([
-                        'unit_name' => $unitData['unit_name'],
+                        'unit_id' => $unitData['unit_id'],
                         'conversion_factor' => $unitData['conversion_factor'],
+                        'selling_price' => $unitData['selling_price'] ?? null,
                     ]);
                 } else {
                     ProductUnit::create([
                         'product_id' => $product->id,
-                        'unit_name' => $unitData['unit_name'],
+                        'unit_id' => $unitData['unit_id'],
                         'conversion_factor' => $unitData['conversion_factor'],
+                        'selling_price' => $unitData['selling_price'] ?? null,
                     ]);
                 }
             }
