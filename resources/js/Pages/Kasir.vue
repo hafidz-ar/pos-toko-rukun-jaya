@@ -209,7 +209,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Kasir - Toko Material POS" />
+    <Head title="Kasir - Toko Rukun Jaya" />
     
     <div class="bg-background text-on-background font-body-md overflow-hidden h-screen">
         <!-- Focused POS Header -->
@@ -336,7 +336,7 @@ onUnmounted(() => {
                             </div>
                         </div>
                         
-                        <button class="w-full h-14 mt-4 bg-primary text-on-primary rounded-lg text-label-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container shadow-lg active:translate-y-[1px] transition-all disabled:opacity-50 disabled:cursor-not-allowed" @click="openConfirmation" :disabled="cart.length === 0">
+                        <button class="btn-primary w-full h-14 mt-4 text-label-xl font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" @click="openConfirmation" :disabled="cart.length === 0">
                             <span class="material-symbols-outlined">payments</span> BAYAR (F12)
                         </button>
                     </div>
@@ -434,8 +434,8 @@ onUnmounted(() => {
                         </div>
 
                         <div class="flex gap-3 pt-2">
-                            <button class="flex-1 h-12 border border-outline-variant bg-surface-container-low text-on-surface-variant rounded font-bold hover:bg-surface-container-high transition-all active:translate-y-[1px]" @click="closeConfirmation">Batal</button>
-                            <button class="flex-1 h-12 bg-primary text-on-primary rounded font-bold shadow-md hover:bg-primary-container transition-all active:translate-y-[1px] flex justify-center items-center gap-2" @click="confirmPayment" :disabled="isSubmitting">
+                            <button class="btn-secondary flex-1 h-12" @click="closeConfirmation">Batal</button>
+                            <button class="btn-primary flex-1 h-12 flex justify-center items-center gap-2" @click="confirmPayment" :disabled="isSubmitting">
                                 <span v-if="isSubmitting" class="material-symbols-outlined animate-spin">progress_activity</span>
                                 <span v-else class="material-symbols-outlined">check_circle</span>
                                 Konfirmasi
@@ -452,7 +452,7 @@ onUnmounted(() => {
                 <div class="bg-white w-full max-w-sm rounded shadow-2xl overflow-hidden flex flex-col font-mono text-black p-6 border-t-8 border-primary">
                     <div class="text-center border-b border-dashed border-gray-300 pb-4 mb-4">
                         <h2 class="text-xl font-bold uppercase">STRUK PEMBAYARAN</h2>
-                        <p class="text-xs">TOKO MATERIAL POS</p>
+                        <p class="text-xs">TOKO RUKUN JAYA</p>
                         <p class="text-[10px]">No: TX-{{ String(receiptData.id).padStart(6, '0') }}</p>
                         <p class="text-[10px]">{{ receiptData.datetime }}</p>
                         <p class="text-[10px]">Kasir: {{ receiptData.cashier }}</p>

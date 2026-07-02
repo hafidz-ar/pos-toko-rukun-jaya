@@ -95,6 +95,13 @@ const addErrors = ref({});
 const isAddSubmitting = ref(false);
 const addPhotoPreviewUrl = ref('');
 
+const addCategoryUnits = computed(() => {
+    if (!addForm.category_id) return [];
+    const cat = props.categories.find(c => c.id === addForm.category_id);
+    if (!cat || !cat.units) return [];
+    return cat.units.split(',').map(u => u.trim()).filter(Boolean);
+});
+
 const handleAddPhotoChange = (e) => {
     const file = e.target.files[0];
     addForm.photo_file = file;
@@ -156,6 +163,13 @@ const editForm = reactive({
 const editErrors = ref({});
 const isEditSubmitting = ref(false);
 const editPhotoPreviewUrl = ref('');
+
+const editCategoryUnits = computed(() => {
+    if (!editForm.category_id) return [];
+    const cat = props.categories.find(c => c.id === editForm.category_id);
+    if (!cat || !cat.units) return [];
+    return cat.units.split(',').map(u => u.trim()).filter(Boolean);
+});
 
 const handleEditPhotoChange = (e) => {
     const file = e.target.files[0];
@@ -261,7 +275,7 @@ const closeMovements = () => {
 </script>
 
 <template>
-    <Head title="Toko Material POS - Daftar Inventori" />
+    <Head title="Toko Rukun Jaya - Daftar Inventori" />
 
     <div class="fixed inset-0 bg-background text-on-background flex flex-col md:flex-row overflow-hidden w-full h-full font-sans">
         
@@ -283,7 +297,7 @@ const closeMovements = () => {
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">
@@ -367,8 +381,7 @@ const closeMovements = () => {
                     <button v-if="filters?.search || filters?.category_id || filters?.low_stock" @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-4 rounded font-bold text-secondary hover:bg-surface-container-high transition-all">
                         Reset
                     </button>
-                    <!-- Tombol Tambah (Owner only) -->
-                    <button v-if="props.auth?.user?.role === 'owner'" @click="openAddModal" class="ml-auto h-10 bg-[#ee6c12] text-white px-6 font-bold flex items-center gap-2 hover:brightness-110 active:translate-y-px transition-all rounded">
+                    <button v-if="props.auth?.user?.role === 'owner'" @click="openAddModal" class="btn-primary ml-auto h-10 px-6 flex items-center gap-2 rounded">
                         <span class="material-symbols-outlined">add_box</span> Tambah Barang
                     </button>
                 </div>
@@ -521,7 +534,11 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <input v-model="addForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, batang" type="text" required>
+                            <select v-model="addForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                                <option value="">Pilih Satuan</option>
+                                <option v-for="unit in addCategoryUnits" :key="unit" :value="unit">{{ unit }}</option>
+                            </select>
+                            <p v-if="addCategoryUnits.length === 0" class="text-xs text-secondary mt-1">Daftarkan satuan di pengaturan kategori terlebih dahulu</p>
                         </div>
 
                         <div>
@@ -569,7 +586,10 @@ const closeMovements = () => {
                                 </button>
                             </div>
                             <div v-for="(unit, i) in addForm.units" :key="i" class="flex gap-3 mb-2 items-center">
-                                <input v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Nama satuan (cth: ton)" type="text">
+                                <select v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" required>
+                                    <option value="">Pilih Satuan</option>
+                                    <option v-for="u in addCategoryUnits" :key="u" :value="u" :disabled="u === addForm.base_unit">{{ u }}</option>
+                                </select>
                                 <span class="text-secondary text-sm">= </span>
                                 <input v-model="unit.conversion_factor" class="w-28 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Faktor (cth: 1000)" type="number" min="0.0001" step="any">
                                 <span class="text-secondary text-sm">{{ addForm.base_unit || 'unit' }}</span>
@@ -582,8 +602,8 @@ const closeMovements = () => {
                 </div>
 
                 <div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-4">
-                    <button type="button" @click="showAddModal = false" class="px-6 py-3 border-2 border-outline-variant font-bold text-secondary hover:bg-surface-container-low rounded transition-colors">Batal</button>
-                    <button @click="submitAdd" :disabled="isAddSubmitting" class="bg-[#ee6c12] text-white px-8 py-3 font-bold hover:brightness-110 active:scale-95 transition-all rounded disabled:opacity-50">
+                    <button type="button" @click="showAddModal = false" class="btn-secondary px-6 py-3">Batal</button>
+                    <button @click="submitAdd" :disabled="isAddSubmitting" class="btn-primary px-8 py-3">
                         <span v-if="isAddSubmitting">Menyimpan...</span>
                         <span v-else>Simpan Barang</span>
                     </button>
@@ -624,7 +644,11 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <input v-model="editForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" type="text" required>
+                            <select v-model="editForm.base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                                <option value="">Pilih Satuan</option>
+                                <option v-for="unit in editCategoryUnits" :key="unit" :value="unit">{{ unit }}</option>
+                            </select>
+                            <p v-if="editCategoryUnits.length === 0" class="text-xs text-secondary mt-1">Daftarkan satuan di pengaturan kategori terlebih dahulu</p>
                         </div>
 
                         <div>
@@ -667,7 +691,10 @@ const closeMovements = () => {
                                 </button>
                             </div>
                             <div v-for="(unit, i) in editForm.units" :key="i" class="flex gap-3 mb-2 items-center">
-                                <input v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Nama satuan" type="text">
+                                <select v-model="unit.unit_name" class="flex-1 p-2 border border-outline-variant bg-white rounded text-sm" required>
+                                    <option value="">Pilih Satuan</option>
+                                    <option v-for="u in editCategoryUnits" :key="u" :value="u" :disabled="u === editForm.base_unit">{{ u }}</option>
+                                </select>
                                 <span class="text-secondary text-sm">= </span>
                                 <input v-model="unit.conversion_factor" class="w-28 p-2 border border-outline-variant bg-white rounded text-sm" placeholder="Faktor" type="number" min="0.0001" step="any">
                                 <span class="text-secondary text-sm">{{ editForm.base_unit || 'unit' }}</span>
@@ -680,8 +707,8 @@ const closeMovements = () => {
                 </div>
 
                 <div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-4">
-                    <button type="button" @click="showEditModal = false" class="px-6 py-3 border-2 border-outline-variant font-bold text-secondary hover:bg-surface-container-low rounded transition-colors">Batal</button>
-                    <button @click="submitEdit" :disabled="isEditSubmitting" class="bg-[#ee6c12] text-white px-8 py-3 font-bold hover:brightness-110 active:scale-95 transition-all rounded disabled:opacity-50">
+                    <button type="button" @click="showEditModal = false" class="btn-secondary px-6 py-3">Batal</button>
+                    <button @click="submitEdit" :disabled="isEditSubmitting" class="btn-primary px-8 py-3">
                         <span v-if="isEditSubmitting">Menyimpan...</span>
                         <span v-else>Simpan Perubahan</span>
                     </button>

@@ -96,13 +96,14 @@ const deactivateUser = (user) => {
 // ────────── Manajemen Kategori ──────────
 const showAddCatModal = ref(false);
 const showEditCatModal = ref(false);
-const catForm = reactive({ name: '' });
-const editCatForm = reactive({ id: null, name: '' });
+const catForm = reactive({ name: '', units: '' });
+const editCatForm = reactive({ id: null, name: '', units: '' });
 const catErrors = ref({});
 const isCatSubmitting = ref(false);
 
 const openAddCat = () => {
     catForm.name = '';
+    catForm.units = '';
     catErrors.value = {};
     showAddCatModal.value = true;
 };
@@ -116,7 +117,7 @@ const submitAddCat = () => {
 };
 
 const openEditCat = (cat) => {
-    Object.assign(editCatForm, { id: cat.id, name: cat.name });
+    Object.assign(editCatForm, { id: cat.id, name: cat.name, units: cat.units || '' });
     catErrors.value = {};
     showEditCatModal.value = true;
 };
@@ -231,7 +232,7 @@ const switchTab = (tab) => {
 };
 
 // ────────── Link Telegram ──────────
-const telegramChatId = ref('');
+const telegramChatId = ref(props.auth?.user?.telegram_chat_id || '');
 const isLinkingTelegram = ref(false);
 
 const linkTelegram = () => {
@@ -246,7 +247,7 @@ const linkTelegram = () => {
 </script>
 
 <template>
-    <Head title="Settings - Toko Material POS" />
+    <Head title="Settings - Toko Rukun Jaya" />
 
     <div class="bg-background text-on-background font-body-md overflow-hidden h-screen flex">
         
@@ -268,7 +269,7 @@ const linkTelegram = () => {
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">
@@ -427,16 +428,18 @@ const linkTelegram = () => {
                                     <thead class="bg-surface-container-high border-b border-outline-variant">
                                         <tr>
                                             <th class="px-6 py-4 text-label-md font-label-md">Nama Kategori</th>
+                                            <th class="px-6 py-4 text-label-md font-label-md">Satuan Terdaftar</th>
                                             <th class="px-6 py-4 text-label-md font-label-md text-right">Jumlah Produk</th>
                                             <th class="px-6 py-4 text-label-md font-label-md text-center">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-outline-variant">
                                         <tr v-if="!props.categories || props.categories.length === 0">
-                                            <td colspan="3" class="px-6 py-8 text-center text-secondary">Belum ada kategori.</td>
+                                            <td colspan="4" class="px-6 py-8 text-center text-secondary">Belum ada kategori.</td>
                                         </tr>
                                         <tr v-for="cat in props.categories" :key="cat.id" class="hover:bg-surface-container-low transition-colors">
                                             <td class="px-6 py-4 font-bold text-on-surface">{{ cat.name }}</td>
+                                            <td class="px-6 py-4 text-sm text-secondary">{{ cat.units || '-' }}</td>
                                             <td class="px-6 py-4 text-right">
                                                 <span class="bg-surface-container-high px-3 py-1 rounded-full text-sm font-bold">{{ cat.products_count || 0 }}</span>
                                             </td>
@@ -468,6 +471,16 @@ const linkTelegram = () => {
                                         <li>Masukkan angka tersebut di kolom bawah</li>
                                     </ol>
                                 </div>
+                                
+                                <div v-if="props.auth?.user?.telegram_chat_id" class="p-3 bg-green-500/10 text-green-700 border border-green-500/20 rounded-lg text-sm flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                                    <span>Status: <strong class="text-green-800">Terhubung</strong> (ID Aktif: {{ props.auth.user.telegram_chat_id }})</span>
+                                </div>
+                                <div v-else class="p-3 bg-surface-container-low border border-outline-variant rounded-lg text-sm flex items-center gap-2 text-secondary">
+                                    <span class="material-symbols-outlined text-sm">info</span>
+                                    <span>Status: <strong>Belum Terhubung</strong></span>
+                                </div>
+
                                 <div>
                                     <label class="block text-label-md font-label-md text-on-surface mb-2">Chat ID Telegram</label>
                                     <input v-model="telegramChatId" type="text" class="w-full px-4 py-3 bg-surface border-2 border-outline-variant rounded-lg font-body-md focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none" placeholder="Contoh: 123456789">
@@ -708,6 +721,11 @@ const linkTelegram = () => {
                         <input v-model="catForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: Semen, Pipa, Cat..." required>
                         <p v-if="catErrors.name" class="text-error text-xs mt-1">{{ catErrors.name }}</p>
                     </div>
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Daftar Satuan (pisahkan dengan koma)</label>
+                        <input v-model="catForm.units" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, ton, batang, pcs">
+                        <p v-if="catErrors.units" class="text-error text-xs mt-1">{{ catErrors.units }}</p>
+                    </div>
                     <div class="flex justify-end gap-3">
                         <button @click="showAddCatModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
                         <button @click="submitAddCat" :disabled="isCatSubmitting" class="btn-primary-industrial px-6 py-2.5 rounded font-bold disabled:opacity-50">
@@ -732,6 +750,11 @@ const linkTelegram = () => {
                         <label class="block text-sm font-bold text-secondary mb-1">Nama Kategori *</label>
                         <input v-model="editCatForm.name" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
                         <p v-if="catErrors.name" class="text-error text-xs mt-1">{{ catErrors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-secondary mb-1">Daftar Satuan (pisahkan dengan koma)</label>
+                        <input v-model="editCatForm.units" type="text" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="Contoh: sak, kg, ton, batang, pcs">
+                        <p v-if="catErrors.units" class="text-error text-xs mt-1">{{ catErrors.units }}</p>
                     </div>
                     <div class="flex justify-end gap-3">
                         <button @click="showEditCatModal = false" class="px-5 py-2.5 border border-outline-variant rounded font-bold text-secondary hover:bg-surface-container-low">Batal</button>
@@ -793,12 +816,19 @@ const linkTelegram = () => {
 }
 
 .btn-primary-industrial {
-    background-color: var(--color-primary-container, #ee6c12);
-    color: var(--color-on-primary-container, #4d1d00);
-    transition: all 100ms;
+    background-color: #ee6c12;
+    color: #ffffff;
+    font-weight: 700;
+    transition: all 150ms ease;
+    border: none;
+    cursor: pointer;
 }
-.btn-primary-industrial:hover { filter: brightness(90%); }
-.btn-primary-industrial:active { transform: translateY(1px); }
+.btn-primary-industrial:hover {
+    background-color: #d65b0f;
+}
+.btn-primary-industrial:active {
+    transform: translateY(1px);
+}
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

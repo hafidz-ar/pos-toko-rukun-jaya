@@ -90,9 +90,11 @@ class BackupController extends Controller
 
             if ($owner->telegram_chat_id) {
                 try {
-                    app(TelegramService::class)->sendMessage(
+                    app(TelegramService::class)->sendDocument(
                         $owner->telegram_chat_id,
-                        '📦 Backup harian berhasil: ' . $filename . ' (' . $this->formatBytes($backup->file_size) . ')'
+                        $filepath,
+                        $filename,
+                        '📦 <b>Backup harian berhasil dibuat!</b>'
                     );
                 } catch (\Throwable $e) {
                     \Log::warning('Telegram backup notification failed: ' . $e->getMessage());

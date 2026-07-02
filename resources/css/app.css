@@ -118,6 +118,54 @@
         transform: translateY(1px);
     }
 
+    /* Primary Button: Solid Industrial Orange (#ee6c12) background with White text */
+    .btn-primary {
+        background-color: #ee6c12;
+        color: #ffffff;
+        font-weight: 700;
+        border-radius: 0.25rem;
+        transition: all 150ms ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: none;
+    }
+    .btn-primary:hover {
+        background-color: #d65b0f;
+    }
+    .btn-primary:active {
+        transform: translateY(1px);
+    }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Secondary Button: Transparent background with 2px Slate border (#545f73) */
+    .btn-secondary {
+        background-color: transparent;
+        border: 2px solid #545f73;
+        color: #545f73;
+        font-weight: 700;
+        border-radius: 0.25rem;
+        transition: all 150ms ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .btn-secondary:hover {
+        background-color: rgba(84, 95, 115, 0.1);
+    }
+    .btn-secondary:active {
+        transform: translateY(1px);
+    }
+    .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     /* Industrial Grid Pattern Overlay */
     .bg-industrial {
         background-color: var(--color-surface-bright);

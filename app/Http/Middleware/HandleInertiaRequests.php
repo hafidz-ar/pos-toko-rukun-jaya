@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'username' => $request->user()->username,
                     'role' => $request->user()->role,
+                    'telegram_chat_id' => $request->user()->telegram_chat_id,
                 ] : null,
             ],
 

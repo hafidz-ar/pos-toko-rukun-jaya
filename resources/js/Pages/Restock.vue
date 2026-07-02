@@ -163,7 +163,7 @@ const formatRupiah = (number) => {
 </script>
 
 <template>
-    <Head title="Restock Stok | Toko Material POS" />
+    <Head title="Restock Stok | Toko Rukun Jaya" />
 
     <div class="fixed inset-0 bg-background text-on-background flex flex-col md:flex-row overflow-hidden w-full h-full font-sans">
         
@@ -184,7 +184,7 @@ const formatRupiah = (number) => {
 
         <!-- Top Navigation Bar (Mobile only) -->
         <nav class="md:hidden flex justify-between items-center w-full px-4 h-16 bg-surface border-b border-outline-variant shrink-0 z-30">
-            <span class="text-xl font-bold text-primary">Toko Material POS</span>
+            <span class="text-xl font-bold text-primary">Toko Rukun Jaya</span>
             <div class="flex gap-4">
                 <button @click="handleLogout" class="material-symbols-outlined text-error active:scale-90 transition-transform" title="Keluar">logout</button>
             </div>
@@ -193,7 +193,7 @@ const formatRupiah = (number) => {
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">

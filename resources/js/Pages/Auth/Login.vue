@@ -22,7 +22,7 @@ const handleLogin = () => {
 </script>
 
 <template>
-    <Head title="Login | Toko Material POS" />
+    <Head title="Login | Toko Rukun Jaya" />
     
     <div class="fixed inset-0 bg-industrial flex items-center justify-center p-4 md:p-6 overflow-y-auto">
         <!-- Login Container -->
@@ -36,7 +36,7 @@ const handleLogin = () => {
                     </span>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-bold text-primary tracking-tight text-center">
-                    Toko Material POS
+                    Toko Rukun Jaya
                 </h1>
                 <p class="text-xs md:text-sm text-secondary mt-1">Industrial Excellence &amp; Precision</p>
             </div>
@@ -138,7 +138,7 @@ const handleLogin = () => {
             <!-- Footer / Support -->
             <footer class="mt-6 md:mt-8 text-center">
                 <p class="text-xs font-semibold text-secondary">
-                    v2.4.0 © 2024 Toko Material POS. Build ID: TM-882
+                    v2.4.0 © 2024 Toko Rukun Jaya. Build ID: TRJ-882
                 </p>
                 <div class="flex justify-center space-x-4 mt-2">
                     <span class="material-symbols-outlined text-outline-variant">support_agent</span>

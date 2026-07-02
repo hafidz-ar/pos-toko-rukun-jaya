@@ -159,7 +159,7 @@
 
     {{-- ====== HEADER ====== --}}
     <div class="header">
-        <div class="store-name">Toko Material Ci Ali</div>
+        <div class="store-name">Toko Rukun Jaya</div>
         <h1>Laporan Keuangan</h1>
         <div class="period">Periode: {{ $periodLabel }}</div>
         <div class="generated">Dicetak: {{ $generatedAt }}</div>
@@ -306,7 +306,7 @@
 
     {{-- ====== FOOTER ====== --}}
     <div class="footer">
-        Laporan ini digenerate otomatis oleh Sistem POS Toko Material Ci Ali.<br>
+        Laporan ini digenerate otomatis oleh Sistem POS Toko Rukun Jaya.<br>
         Data bersumber dari transaksi yang tercatat di sistem. Laporan bersifat operasional, bukan pembukuan akuntansi lengkap.
     </div>
 

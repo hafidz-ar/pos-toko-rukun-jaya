@@ -50,17 +50,12 @@ class DatabaseSeeder extends Seeder
         $users = [$owner, $karyawan1, $karyawan2];
 
         // ==============================
-        // 2. CATEGORIES
+        // 2. CATEGORIES (Smallest to Largest Units)
         // ==============================
         $categories = [
-            'Semen' => Category::create(['name' => 'Semen']),
-            'Besi' => Category::create(['name' => 'Besi']),
-            'Pipa' => Category::create(['name' => 'Pipa']),
-            'Cat' => Category::create(['name' => 'Cat']),
-            'Kayu' => Category::create(['name' => 'Kayu']),
-            'Perkakas' => Category::create(['name' => 'Perkakas']),
-            'Atap' => Category::create(['name' => 'Atap']),
-            'Aksesoris' => Category::create(['name' => 'Aksesoris']),
+            'Aksesoris Rumah Tangga' => Category::create(['name' => 'Aksesoris Rumah Tangga', 'units' => 'buah, pcs, pack, lusin, box']),
+            'Bahan Bangunan' => Category::create(['name' => 'Bahan Bangunan', 'units' => 'pcs, batang, lembar, sak, kg, ton']),
+            'Sparepart Laptop' => Category::create(['name' => 'Sparepart Laptop', 'units' => 'pcs, box']),
         ];
 
         // ==============================
@@ -69,11 +64,11 @@ class DatabaseSeeder extends Seeder
         $productData = [
             [
                 'name' => 'Semen Tiga Roda',
-                'category' => 'Semen',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'kg',
                 'cost_price' => 2500,   // per kg
                 'selling_price' => 3200, // per kg
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 500,
                 'initial_stock' => 2500, // 50 sak
                 'units' => [
@@ -83,11 +78,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Semen Holcim',
-                'category' => 'Semen',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'kg',
                 'cost_price' => 2300,
                 'selling_price' => 3000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 500,
                 'initial_stock' => 2000, // 40 sak
                 'units' => [
@@ -97,11 +92,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Besi Beton 8mm',
-                'category' => 'Besi',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'batang',
                 'cost_price' => 45000,
                 'selling_price' => 55000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 20,
                 'initial_stock' => 100,
                 'units' => [
@@ -111,11 +106,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Besi Beton 10mm',
-                'category' => 'Besi',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'batang',
                 'cost_price' => 65000,
                 'selling_price' => 78000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 15,
                 'initial_stock' => 60,
                 'units' => [
@@ -125,11 +120,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Pipa PVC AW 1/2"',
-                'category' => 'Pipa',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'batang',
                 'cost_price' => 25000,
                 'selling_price' => 32000,
-                'location' => 'Rak A1',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 20,
                 'initial_stock' => 80,
                 'units' => [
@@ -139,11 +134,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Pipa PVC AW 3/4"',
-                'category' => 'Pipa',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'batang',
                 'cost_price' => 35000,
                 'selling_price' => 45000,
-                'location' => 'Rak A1',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 15,
                 'initial_stock' => 50,
                 'units' => [
@@ -152,40 +147,40 @@ class DatabaseSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Cat Dulux Catylac Putih',
-                'category' => 'Cat',
-                'base_unit' => 'kg',
-                'cost_price' => 15000,
-                'selling_price' => 20000,
-                'location' => 'Rak B1',
-                'min_stock' => 25,
-                'initial_stock' => 125, // 5 pail
+                'name' => 'SSD V-Gen SATA 256GB',
+                'category' => 'Sparepart Laptop',
+                'base_unit' => 'pcs',
+                'cost_price' => 250000,
+                'selling_price' => 320000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 15,
                 'units' => [
-                    ['name' => 'pail', 'factor' => 25],   // 1 pail = 25 kg
-                    ['name' => 'galon', 'factor' => 5],    // 1 galon = 5 kg
+                    ['name' => 'pcs', 'factor' => 1],
+                    ['name' => 'box', 'factor' => 10],
                 ],
             ],
             [
-                'name' => 'Cat Jotun Jotashield',
-                'category' => 'Cat',
-                'base_unit' => 'kg',
-                'cost_price' => 40000,
-                'selling_price' => 52000,
-                'location' => 'Rak B1',
-                'min_stock' => 10,
-                'initial_stock' => 50, // 2 pail
+                'name' => 'RAM DDR4 SODIMM 8GB',
+                'category' => 'Sparepart Laptop',
+                'base_unit' => 'pcs',
+                'cost_price' => 180000,
+                'selling_price' => 240000,
+                'location' => 'Etalase Depan',
+                'min_stock' => 5,
+                'initial_stock' => 20,
                 'units' => [
-                    ['name' => 'pail', 'factor' => 25],
-                    ['name' => 'galon', 'factor' => 5],
+                    ['name' => 'pcs', 'factor' => 1],
+                    ['name' => 'box', 'factor' => 10],
                 ],
             ],
             [
                 'name' => 'Paku Kayu 3 Inch',
-                'category' => 'Perkakas',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'kg',
                 'cost_price' => 18000,
                 'selling_price' => 25000,
-                'location' => 'Rak A2',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 5,
                 'initial_stock' => 30,
                 'units' => [
@@ -194,11 +189,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Seng Gelombang 180cm',
-                'category' => 'Atap',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'lembar',
                 'cost_price' => 45000,
                 'selling_price' => 58000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 10,
                 'initial_stock' => 40,
                 'units' => [
@@ -208,11 +203,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Triplek 12mm',
-                'category' => 'Kayu',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'lembar',
                 'cost_price' => 120000,
                 'selling_price' => 150000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 5,
                 'initial_stock' => 20,
                 'units' => [
@@ -221,7 +216,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Kran Air Stainless 1/2"',
-                'category' => 'Aksesoris',
+                'category' => 'Aksesoris Rumah Tangga',
                 'base_unit' => 'buah',
                 'cost_price' => 25000,
                 'selling_price' => 35000,
@@ -235,11 +230,11 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Kawat Bendrat',
-                'category' => 'Besi',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'kg',
                 'cost_price' => 12000,
                 'selling_price' => 16000,
-                'location' => 'Rak A2',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 10,
                 'initial_stock' => 50,
                 'units' => [
@@ -248,13 +243,13 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Kuas Cat 3 Inch',
-                'category' => 'Perkakas',
+                'category' => 'Aksesoris Rumah Tangga',
                 'base_unit' => 'buah',
                 'cost_price' => 8000,
                 'selling_price' => 12000,
                 'location' => 'Etalase Depan',
                 'min_stock' => 10,
-                'initial_stock' => 3, // stok menipis — for testing
+                'initial_stock' => 3, // low stock
                 'units' => [
                     ['name' => 'buah', 'factor' => 1],
                     ['name' => 'lusin', 'factor' => 12],
@@ -262,13 +257,13 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'name' => 'Bata Ringan Hebel',
-                'category' => 'Semen',
+                'category' => 'Bahan Bangunan',
                 'base_unit' => 'buah',
                 'cost_price' => 8500,
                 'selling_price' => 11000,
-                'location' => 'Gudang Belakang',
+                'location' => 'Gudang Muntilan',
                 'min_stock' => 100,
-                'initial_stock' => 50, // stok menipis — for testing
+                'initial_stock' => 50, // low stock
                 'units' => [
                     ['name' => 'buah', 'factor' => 1],
                     ['name' => 'kubik', 'factor' => 133],  // ≈133 buah per m³
@@ -302,7 +297,6 @@ class DatabaseSeeder extends Seeder
 
             // Initial restock record
             $restockUnit = $pd['units'][0];
-            $qtyInUnit = $pd['initial_stock'] / $restockUnit['factor'];
             Restock::create([
                 'product_id' => $product->id,
                 'qty_base_unit' => $pd['initial_stock'],
@@ -317,16 +311,15 @@ class DatabaseSeeder extends Seeder
         }
 
         // ==============================
-        // 4. ADDITIONAL RESTOCKS (untuk riwayat + weighted avg testing)
+        // 4. ADDITIONAL RESTOCKS
         // ==============================
-        // Semen Tiga Roda — restock kedua dengan HPP sedikit naik
         $semenTR = $products[0];
         Restock::create([
             'product_id' => $semenTR->id,
             'qty_base_unit' => 1500, // 30 sak
             'unit_name_at_restock' => 'sak',
             'cost_price_per_base_unit_at_restock' => 2700, // naik dari 2500
-            'location' => 'Gudang Belakang',
+            'location' => 'Gudang Muntilan',
             'restocked_by_user_id' => $karyawan1->id,
             'restocked_at' => now()->subDays(7),
         ]);
@@ -367,11 +360,11 @@ class DatabaseSeeder extends Seeder
                     ['product_idx' => 2, 'unit' => 'ikat', 'qty' => 1],
                 ],
             ],
-            // Transaksi 3: Owner jual cat dulux 1 pail + kuas 3 buah, diskon 10.000 (4 hari lalu)
+            // Transaksi 3: Owner jual SSD 2 pcs + kuas 3 buah, diskon 10.000 (4 hari lalu)
             [
                 'cashier' => $owner, 'method' => 'tunai', 'discount' => 10000, 'days_ago' => 4,
                 'items' => [
-                    ['product_idx' => 6, 'unit' => 'pail', 'qty' => 1],
+                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
                     ['product_idx' => 13, 'unit' => 'buah', 'qty' => 3],
                 ],
             ],
@@ -405,11 +398,11 @@ class DatabaseSeeder extends Seeder
                     ['product_idx' => 5, 'unit' => 'batang', 'qty' => 3],
                 ],
             ],
-            // Transaksi 8: Siti jual cat jotun 1 galon (1 hari lalu)
+            // Transaksi 8: Siti jual RAM 1 pcs (1 hari lalu)
             [
                 'cashier' => $karyawan2, 'method' => 'qris', 'discount' => 0, 'days_ago' => 1,
                 'items' => [
-                    ['product_idx' => 7, 'unit' => 'galon', 'qty' => 1],
+                    ['product_idx' => 7, 'unit' => 'pcs', 'qty' => 1],
                 ],
             ],
             // Transaksi 9: Budi jual besi 10mm 5 lonjor + kawat 1 roll (1 hari lalu)
@@ -435,11 +428,11 @@ class DatabaseSeeder extends Seeder
                     ['product_idx' => 4, 'unit' => 'lusin', 'qty' => 2],
                 ],
             ],
-            // Transaksi 12: Siti jual cat dulux 2 galon + paku 1 dus (hari ini)
+            // Transaksi 12: Siti jual SSD 2 pcs + paku 1 dus (hari ini)
             [
                 'cashier' => $karyawan2, 'method' => 'tunai', 'discount' => 0, 'days_ago' => 0,
                 'items' => [
-                    ['product_idx' => 6, 'unit' => 'galon', 'qty' => 2],
+                    ['product_idx' => 6, 'unit' => 'pcs', 'qty' => 2],
                     ['product_idx' => 8, 'unit' => 'dus', 'qty' => 1],
                 ],
             ],

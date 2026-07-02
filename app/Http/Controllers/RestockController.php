@@ -187,12 +187,14 @@ class RestockController extends Controller
                 }
 
                 // Build notification message
-                $prefix = $isAnomaly ? '⚠️ Restock perlu dicek: ' : 'Restock: ';
+                $prefix = $isAnomaly ? '⚠️ Restock perlu dicek:' : 'Restock:';
                 $qtyDisplay = number_format($validated['qty'], 0) . ' ' . $validated['unit_name'];
                 $qtyBaseDisplay = number_format($qtyBaseUnit, 0) . ' ' . $product->base_unit;
-                $message = $prefix . $product->name . ' — ' . $qtyDisplay .
-                    ' (' . $qtyBaseDisplay . ') oleh ' . auth()->user()->name .
-                    '. HPP: Rp ' . number_format($newHPP, 0, ',', '.') . '/' . $product->base_unit . '.';
+                $oldHppFormatted = $oldHPP > 0 ? 'Rp ' . number_format($oldHPP, 0, ',', '.') : '-';
+                $message = $prefix . "\n" .
+                    "- " . $product->name . ' — ' . $qtyDisplay . ' (' . $qtyBaseDisplay . ') oleh ' . auth()->user()->name . ".\n" .
+                    'HPP Baru: Rp ' . number_format($newHPP, 0, ',', '.') . '/' . $product->base_unit .
+                    ' (HPP Lama: ' . $oldHppFormatted . '/' . $product->base_unit . ').';
 
                 // Send notification to all owners
                 $owners = User::where('role', 'owner')->where('is_active', true)->get();

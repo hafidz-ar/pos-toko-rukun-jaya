@@ -96,18 +96,28 @@ class DashboardController extends Controller
             ->whereRaw('total_amount < (SELECT COALESCE(SUM(ti.cost_price_per_base_unit_at_transaction * ti.qty_in_selected_unit * ti.conversion_factor_at_transaction), 0) FROM transaction_items ti WHERE ti.transaction_id = transactions.id)')
             ->count();
 
-        // 6. Grafik penjualan Senin-Minggu (selalu minggu berjalan)
-        $weekStart = $now->copy()->startOfWeek(Carbon::MONDAY);
+        // 6. Grafik penjualan rolling 7 hari terakhir (paling kanan adalah hari ini)
         $chartData = [];
-        $dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        
+        $indonesianDays = [
+            'Sunday' => 'Min',
+            'Monday' => 'Sen',
+            'Tuesday' => 'Sel',
+            'Wednesday' => 'Rab',
+            'Thursday' => 'Kam',
+            'Friday' => 'Jum',
+            'Saturday' => 'Sab'
+        ];
 
-        for ($i = 0; $i < 7; $i++) {
-            $day = $weekStart->copy()->addDays($i);
+        for ($i = 6; $i >= 0; $i--) {
+            $day = $now->copy()->subDays($i);
             $dayOmset = Transaction::whereDate('transaction_datetime', $day->toDateString())
                 ->sum('total_amount');
 
+            $dayName = $indonesianDays[$day->format('l')] ?? substr($day->format('D'), 0, 3);
+
             $chartData[] = [
-                'day' => $dayNames[$i],
+                'day' => $dayName,
                 'date' => $day->format('d/m'),
                 'amount' => (float) $dayOmset,
             ];

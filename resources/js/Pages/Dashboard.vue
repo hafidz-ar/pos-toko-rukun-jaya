@@ -125,7 +125,7 @@ const openOwnerMenu = (menuName, path) => {
 </script>
 
 <template>
-    <Head title="Dashboard | Toko Material POS" />
+    <Head title="Dashboard | Toko Rukun Jaya" />
 
     <div class="fixed inset-0 bg-background text-on-background flex flex-col md:flex-row overflow-hidden w-full h-full font-sans">
         
@@ -146,7 +146,7 @@ const openOwnerMenu = (menuName, path) => {
 
         <!-- Top Navigation Bar (Mobile only) -->
         <nav class="md:hidden flex justify-between items-center w-full px-margin-mobile h-touch-target-min bg-surface border-b-2 border-outline-variant shrink-0 z-30">
-            <span class="text-headline-md font-headline-md font-bold text-primary">Toko Material POS</span>
+            <span class="text-headline-md font-headline-md font-bold text-primary">Toko Rukun Jaya</span>
             <div class="flex gap-4">
                 <button @click="triggerToast('Profil Admin')" class="material-symbols-outlined text-secondary active:scale-90 transition-transform">account_circle</button>
                 <button @click="handleLogout" class="material-symbols-outlined text-error active:scale-90 transition-transform" title="Keluar">logout</button>
@@ -156,7 +156,7 @@ const openOwnerMenu = (menuName, path) => {
         <!-- Side Navigation Bar (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">

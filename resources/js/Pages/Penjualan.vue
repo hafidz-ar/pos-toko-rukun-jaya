@@ -93,7 +93,7 @@ const goToPage = (url) => {
 </script>
 
 <template>
-    <Head title="Penjualan | Toko Material POS" />
+    <Head title="Penjualan | Toko Rukun Jaya" />
 
     <div class="bg-background text-on-background font-body-md overflow-hidden h-screen flex">
         
@@ -115,7 +115,7 @@ const goToPage = (url) => {
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">

@@ -61,7 +61,7 @@ const printReport = () => {
 </script>
 
 <template>
-    <Head title="Laporan & Analitik - Toko Material POS" />
+    <Head title="Laporan & Analitik - Toko Rukun Jaya" />
 
     <div class="bg-background text-on-surface font-body-md h-screen flex flex-col md:flex-row overflow-hidden">
         
@@ -83,7 +83,7 @@ const printReport = () => {
         <!-- SIDE NAVBAR (Desktop) -->
         <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
             <div class="px-4 py-6">
-                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Material POS</h1>
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
             </div>
             
             <div class="flex flex-col gap-1 flex-1">
