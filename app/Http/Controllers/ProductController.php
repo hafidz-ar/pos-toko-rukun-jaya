@@ -51,11 +51,22 @@ class ProductController extends Controller
             'stock_qty_base_unit' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'photo_url' => 'nullable|url|max:500',
+            'photo_file' => 'nullable|image|max:5120', // Max 5MB
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
             'units.*.unit_name' => 'required_with:units|string|max:50',
             'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001',
         ]);
+
+        $photoUrl = $validated['photo_url'] ?? null;
+
+        if ($request->hasFile('photo_file')) {
+            try {
+                $photoUrl = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
+            } catch (\Exception $e) {
+                return back()->withErrors(['photo_file' => $e->getMessage()]);
+            }
+        }
 
         $product = Product::create([
             'name' => $validated['name'],
@@ -65,7 +76,7 @@ class ProductController extends Controller
             'selling_price_per_base_unit' => $validated['selling_price_per_base_unit'],
             'stock_qty_base_unit' => $validated['stock_qty_base_unit'] ?? 0,
             'location' => $validated['location'] ?? null,
-            'photo_url' => $validated['photo_url'] ?? null,
+            'photo_url' => $photoUrl,
             'min_stock_threshold' => $validated['min_stock_threshold'] ?? 10,
         ]);
 
@@ -96,12 +107,25 @@ class ProductController extends Controller
             'selling_price_per_base_unit' => 'required|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'photo_url' => 'nullable|url|max:500',
+            'photo_file' => 'nullable|image|max:5120', // Max 5MB
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
             'units.*.id' => 'nullable|integer',
             'units.*.unit_name' => 'required_with:units|string|max:50',
             'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001',
         ]);
+
+        $photoUrl = $product->photo_url;
+
+        if ($request->hasFile('photo_file')) {
+            try {
+                $photoUrl = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
+            } catch (\Exception $e) {
+                return back()->withErrors(['photo_file' => $e->getMessage()]);
+            }
+        } elseif (array_key_exists('photo_url', $validated)) {
+            $photoUrl = $validated['photo_url'];
+        }
 
         // Update product (HPP excluded from manual edit per PRD 3.4)
         $product->update([
@@ -110,7 +134,7 @@ class ProductController extends Controller
             'base_unit' => $validated['base_unit'],
             'selling_price_per_base_unit' => $validated['selling_price_per_base_unit'],
             'location' => $validated['location'] ?? $product->location,
-            'photo_url' => $validated['photo_url'] ?? $product->photo_url,
+            'photo_url' => $photoUrl,
             'min_stock_threshold' => $validated['min_stock_threshold'] ?? $product->min_stock_threshold,
         ]);
 

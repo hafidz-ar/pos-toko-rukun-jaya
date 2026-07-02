@@ -84,7 +84,7 @@ const clearPoint = () => {
 const handleLogout = () => {
     triggerToast('Keluar dari sistem...');
     setTimeout(() => {
-        router.visit('/');
+        router.post('/logout');
     }, 800);
 };
 
@@ -98,6 +98,10 @@ const setTab = (tab) => {
         router.visit('/dashboard');
     } else if (tab === 'sales') {
         router.visit('/penjualan');
+    } else if (tab === 'reports') {
+        router.visit('/laporan');
+    } else if (tab === 'settings') {
+        router.visit('/pengaturan');
     } else {
         triggerToast(`Menu ${tab.charAt(0).toUpperCase() + tab.slice(1)} sedang dalam pengembangan.`);
     }
@@ -111,8 +115,12 @@ const checkStock = () => {
     router.visit('/inventaris');
 };
 
-const openOwnerMenu = (menuName) => {
-    triggerToast(`Akses ditolak: Menu "${menuName}" hanya untuk Owner.`);
+const openOwnerMenu = (menuName, path) => {
+    if (path) {
+        router.visit(path);
+    } else {
+        triggerToast(`Menu "${menuName}" hanya untuk Owner.`);
+    }
 };
 </script>
 
@@ -287,40 +295,36 @@ const openOwnerMenu = (menuName) => {
                     </button>
                 </div>
 
-                <!-- LAPORAN (Owner style) -->
                 <div class="lg:col-span-6 group">
                     <button 
-                        @click="openOwnerMenu('Laporan')"
-                        class="w-full h-full text-left bg-surface border-2 border-dashed border-outline-variant opacity-60 hover:opacity-100 hover:border-secondary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
+                        @click="router.visit('/laporan')"
+                        class="w-full h-full text-left bg-surface-container-lowest border-2 border-outline-variant hover:border-primary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
                     >
-                        <div class="bg-surface-container-highest text-secondary w-14 h-14 rounded-full flex items-center justify-center shrink-0">
+                        <div class="bg-primary text-on-primary w-14 h-14 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform shrink-0">
                             <span class="material-symbols-outlined !text-[28px]">analytics</span>
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-label-xl font-label-xl text-on-background">LAPORAN</h3>
-                                <span class="material-symbols-outlined text-outline" style="font-size: 16px;">lock</span>
                             </div>
-                            <p class="text-body-md font-body-md text-secondary">Analisa penjualan & laba rugi bulanan (Owner Only).</p>
+                            <p class="text-body-md font-body-md text-secondary">Analisa penjualan & laba rugi bulanan.</p>
                         </div>
                     </button>
                 </div>
 
-                <!-- HARGA MODAL (Owner style) -->
                 <div class="lg:col-span-6 group">
                     <button 
-                        @click="openOwnerMenu('Harga Modal')"
-                        class="w-full h-full text-left bg-surface border-2 border-dashed border-outline-variant opacity-60 hover:opacity-100 hover:border-secondary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
+                        @click="router.visit('/pengaturan')"
+                        class="w-full h-full text-left bg-surface-container-lowest border-2 border-outline-variant hover:border-primary transition-all duration-300 p-8 rounded-xl flex items-center gap-6 active-press min-h-[160px] cursor-pointer"
                     >
-                        <div class="bg-surface-container-highest text-secondary w-14 h-14 rounded-full flex items-center justify-center shrink-0">
+                        <div class="bg-primary text-on-primary w-14 h-14 rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform shrink-0">
                             <span class="material-symbols-outlined !text-[28px]">settings_suggest</span>
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-label-xl font-label-xl text-on-background">HARGA MODAL</h3>
-                                <span class="material-symbols-outlined text-outline" style="font-size: 16px;">lock</span>
+                                <h3 class="text-label-xl font-label-xl text-on-background">PENGATURAN</h3>
                             </div>
-                            <p class="text-body-md font-body-md text-secondary">Kelola margin keuntungan & biaya operasional.</p>
+                            <p class="text-body-md font-body-md text-secondary">Kelola user, kategori, backup, dan Telegram.</p>
                         </div>
                     </button>
                 </div>
@@ -477,7 +481,7 @@ const openOwnerMenu = (menuName) => {
                 <div class="lg:col-span-12 mt-8">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-headline-md font-headline-md text-on-background">Riwayat Penjualan Hari Ini</h3>
-                        <button @click="triggerToast('Membuka seluruh riwayat penjualan...')" class="text-primary font-bold text-label-md hover:underline">Lihat Semua</button>
+                        <button @click="router.visit('/penjualan')" class="text-primary font-bold text-label-md hover:underline">Lihat Semua</button>
                     </div>
                     
                     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-x-auto">

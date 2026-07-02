@@ -148,7 +148,7 @@ const executeSubmit = (conversionFactor) => {
 const handleLogout = () => {
     triggerToast('Keluar dari sistem...');
     setTimeout(() => {
-        router.visit('/');
+        router.post('/logout');
     }, 800);
 };
 
@@ -405,7 +405,7 @@ const formatRupiah = (number) => {
                     <ul class="space-y-3 mb-6">
                         <li v-for="(warn, idx) in warnings" :key="idx" class="flex gap-3 text-sm bg-error-container/20 text-on-surface p-3 rounded-lg border border-error/20">
                             <span class="material-symbols-outlined text-error text-xl shrink-0">error</span>
-                            <span>{{ warn }}</span>
+                            <span>{{ warn.message }}</span>
                         </li>
                     </ul>
                     

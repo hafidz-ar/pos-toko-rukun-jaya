@@ -255,7 +255,8 @@ class ReportController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        $filename = 'Laporan_Keuangan_' . str_replace(' ', '_', $periodLabel) . '.pdf';
+        $safePeriodLabel = str_replace([' ', '/', '\\'], '_', $periodLabel);
+        $filename = 'Laporan_Keuangan_' . $safePeriodLabel . '.pdf';
 
         return $pdf->download($filename);
     }

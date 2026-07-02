@@ -38,8 +38,24 @@ const triggerToast = (message) => {
 const handleLogout = () => {
     triggerToast('Keluar dari sistem...');
     setTimeout(() => {
-        router.visit('/');
+        router.post('/logout');
     }, 800);
+};
+
+// Period selector
+const changePeriod = (period) => {
+    router.get('/laporan', { period }, { preserveState: false });
+};
+
+// Export PDF
+const exportPdf = () => {
+    const period = props.period || 'mingguan';
+    window.location.href = `/laporan/export-pdf?period=${period}`;
+};
+
+// Print Report
+const printReport = () => {
+    window.print();
 };
 
 </script>
@@ -166,19 +182,17 @@ const handleLogout = () => {
                     <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <span class="font-bold text-on-surface">Periode:</span>
                         <div class="flex flex-wrap bg-surface-container-lowest border-2 border-outline-variant rounded p-1">
-                            <button class="px-4 py-1.5 text-secondary font-bold rounded hover:bg-surface-container-low transition-colors">Harian</button>
-                            <button class="px-4 py-1.5 bg-primary/10 text-primary font-bold rounded border-2 border-primary">Mingguan</button>
-                            <button class="px-4 py-1.5 text-secondary font-bold rounded hover:bg-surface-container-low transition-colors">Bulanan</button>
-                            <button class="flex items-center gap-2 px-4 py-1.5 text-secondary font-bold rounded hover:bg-surface-container-low transition-colors">
-                                <span class="material-symbols-outlined text-sm">calendar_month</span>Custom
-                            </button>
+                            <button @click="changePeriod('harian')" :class="props.period === 'harian' ? 'bg-primary/10 text-primary border-2 border-primary' : 'text-secondary hover:bg-surface-container-low'" class="px-4 py-1.5 font-bold rounded transition-colors">Harian</button>
+                            <button @click="changePeriod('mingguan')" :class="(props.period === 'mingguan' || !props.period) ? 'bg-primary/10 text-primary border-2 border-primary' : 'text-secondary hover:bg-surface-container-low'" class="px-4 py-1.5 font-bold rounded transition-colors">Mingguan</button>
+                            <button @click="changePeriod('bulanan')" :class="props.period === 'bulanan' ? 'bg-primary/10 text-primary border-2 border-primary' : 'text-secondary hover:bg-surface-container-low'" class="px-4 py-1.5 font-bold rounded transition-colors">Bulanan</button>
                         </div>
+                        <span v-if="props.periodLabel" class="text-sm text-secondary">{{ props.periodLabel }}</span>
                     </div>
                     <div class="flex items-center gap-2 md:space-x-4">
-                        <button class="flex items-center justify-center gap-2 border-2 border-outline-variant px-4 py-2 rounded text-primary font-bold hover:bg-surface-container-high transition-colors w-full md:w-auto">
+                        <button @click="exportPdf" class="flex items-center justify-center gap-2 border-2 border-outline-variant px-4 py-2 rounded text-primary font-bold hover:bg-surface-container-high transition-colors w-full md:w-auto">
                             <span class="material-symbols-outlined text-sm">picture_as_pdf</span>Ekspor PDF
                         </button>
-                        <button class="flex items-center justify-center gap-2 bg-primary text-on-primary px-4 py-2 rounded font-bold hover:brightness-90 transition-all w-full md:w-auto">
+                        <button @click="printReport" class="flex items-center justify-center gap-2 bg-primary text-on-primary px-4 py-2 rounded font-bold hover:brightness-90 transition-all w-full md:w-auto">
                             <span class="material-symbols-outlined text-sm">print</span>Cetak Laporan
                         </button>
                     </div>

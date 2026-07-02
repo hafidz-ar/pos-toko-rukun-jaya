@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     auth: Object,
-    transactions: Object,
+    transactions: Object, // paginated
     filters: Object,
+    selectedTransaction: Object, // untuk detail modal
 });
 
 // Toast state
@@ -22,27 +23,73 @@ const triggerToast = (message) => {
     }, 3000);
 };
 
-const currentTab = ref('sales');
-const setTab = (tab) => {
-    currentTab.value = tab;
-    if (tab === 'inventory') {
-        router.visit('/inventaris');
-    } else if (tab === 'dashboard') {
-        router.visit('/dashboard');
-    } else if (tab === 'sales') {
-        router.visit('/kasir');
-    } else if (tab === 'reports') {
-        router.visit('/laporan');
-    }
-};
-
 const handleLogout = () => {
     triggerToast('Keluar dari sistem...');
     setTimeout(() => {
-        router.visit('/');
+        router.post('/logout');
     }, 800);
 };
 
+// Filter tanggal
+const dateFrom = ref(props.filters?.date_from || '');
+const dateTo = ref(props.filters?.date_to || '');
+
+const applyFilter = () => {
+    router.get('/penjualan', {
+        date_from: dateFrom.value || undefined,
+        date_to: dateTo.value || undefined,
+    }, { preserveState: false });
+};
+
+const resetFilter = () => {
+    dateFrom.value = '';
+    dateTo.value = '';
+    router.get('/penjualan', {}, { preserveState: false });
+};
+
+// Detail transaksi modal
+const showDetailModal = ref(false);
+const detailData = ref(null);
+const isLoadingDetail = ref(false);
+
+const openDetail = (txnId) => {
+    isLoadingDetail.value = true;
+    showDetailModal.value = true;
+    detailData.value = null;
+
+    fetch(`/penjualan/${txnId}`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        }
+    })
+        .then(r => r.json())
+        .then(data => {
+            detailData.value = data;
+        })
+        .catch(() => {
+            triggerToast('Gagal memuat detail transaksi.');
+            showDetailModal.value = false;
+        })
+        .finally(() => {
+            isLoadingDetail.value = false;
+        });
+};
+
+const closeDetail = () => {
+    showDetailModal.value = false;
+    detailData.value = null;
+};
+
+const formatRupiah = (number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number || 0);
+};
+
+// Pagination
+const goToPage = (url) => {
+    if (!url) return;
+    router.get(url, {}, { preserveState: false });
+};
 </script>
 
 <template>
@@ -73,61 +120,43 @@ const handleLogout = () => {
             
             <div class="flex flex-col gap-1 flex-1">
                 <!-- Dashboard Tab -->
-                <Link 
-                    href="/dashboard"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
-                >
+                <Link href="/dashboard" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">dashboard</span>
                     <span>Dashboard</span>
                 </Link>
 
                 <!-- Inventory Tab -->
-                <Link 
-                    href="/inventaris"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
-                >
+                <Link href="/inventaris" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">inventory_2</span>
                     <span>Inventaris</span>
                 </Link>
 
                 <!-- Restock Tab -->
-                <Link 
-                    href="/restock"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
-                >
+                <Link href="/restock" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">local_shipping</span>
                     <span>Restok</span>
                 </Link>
 
                 <!-- Sales Tab (Active) -->
-                <Link 
-                    href="/penjualan"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md"
-                >
+                <Link href="/penjualan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md">
                     <span class="material-symbols-outlined">point_of_sale</span>
                     <span>Penjualan</span>
                 </Link>
 
                 <!-- Reports Tab -->
-                <Link 
-                    href="/laporan"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
-                >
+                <Link href="/laporan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">analytics</span>
                     <span>Laporan</span>
                 </Link>
 
                 <!-- Settings Tab -->
-                <Link 
-                    href="/pengaturan"
-                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
-                >
+                <Link href="/pengaturan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">settings</span>
                     <span>Pengaturan</span>
                 </Link>
             </div>
 
-            <!-- Profile & New Transaction Area -->
+            <!-- Profile & Logout -->
             <div class="mt-auto border-t border-outline-variant pt-4 pb-2 px-4 space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -137,7 +166,6 @@ const handleLogout = () => {
                             <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
                         </div>
                     </div>
-                    <!-- Logout button on desktop -->
                     <button @click="handleLogout" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Keluar dari sistem">
                         logout
                     </button>
@@ -163,44 +191,48 @@ const handleLogout = () => {
 
             <!-- Content Canvas -->
             <div class="flex-1 overflow-y-auto p-margin-desktop space-y-gutter pb-24 md:pb-margin-desktop">
-                <!-- Transactions Table Section -->
-                <div class="industrial-border bg-surface-container-lowest rounded-lg shadow-sm overflow-hidden border border-outline-variant">
-                    <div class="bg-surface-container-high p-4 flex justify-between items-center border-b border-outline-variant flex-wrap gap-4">
-                        <div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
-                            <div class="relative flex-1 md:flex-none">
-                                <input class="bg-surface-container-lowest border border-outline px-10 py-2 rounded text-body-md focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none w-full md:w-64" placeholder="Cari ID Transaksi..." type="text">
-                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">search</span>
-                            </div>
-                            <div class="flex items-center gap-2 bg-surface-container-lowest border border-outline px-3 py-2 rounded">
-                                <span class="material-symbols-outlined text-secondary text-[20px]">calendar_today</span>
-                                <span class="text-label-md text-on-surface">24 Okt 2024</span>
-                                <span class="material-symbols-outlined text-secondary">arrow_drop_down</span>
-                            </div>
-                            <div class="flex items-center gap-2 bg-surface-container-lowest border border-outline px-3 py-2 rounded">
-                                <span class="text-label-md text-secondary">Rentang:</span>
-                                <span class="text-label-md text-on-surface">Hari Ini</span>
-                                <span class="material-symbols-outlined text-secondary">arrow_drop_down</span>
-                            </div>
-                        </div>
-                        <button class="bg-surface-container-lowest border border-outline px-4 py-2 text-label-md font-label-md rounded flex items-center gap-2 hover:bg-surface-container-low transition-colors ml-auto md:ml-0">
-                            <span class="material-symbols-outlined">download</span> Ekspor PDF
-                        </button>
+                <!-- Filter Bar -->
+                <div class="bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-wrap gap-3 items-end">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-secondary uppercase">Dari Tanggal</label>
+                        <input v-model="dateFrom" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none" />
                     </div>
-                    
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-secondary uppercase">Sampai Tanggal</label>
+                        <input v-model="dateTo" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none" />
+                    </div>
+                    <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-4 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">filter_list</span>
+                        Filter
+                    </button>
+                    <button v-if="filters?.date_from || filters?.date_to" @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-4 rounded font-bold text-secondary hover:bg-surface-container-high transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">clear</span>
+                        Reset
+                    </button>
+                    <!-- Info filter aktif -->
+                    <div v-if="filters?.date_from || filters?.date_to" class="ml-auto text-sm text-secondary">
+                        <span v-if="filters.date_from">Dari: {{ filters.date_from }}</span>
+                        <span v-if="filters.date_to"> s/d {{ filters.date_to }}</span>
+                    </div>
+                </div>
+
+                <!-- Transactions Table -->
+                <div class="industrial-border bg-surface-container-lowest rounded-lg shadow-sm overflow-hidden border border-outline-variant">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[800px]">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
                             <thead>
                                 <tr class="bg-surface-container text-secondary text-label-md font-label-md">
                                     <th class="p-4 border-b border-outline-variant">ID / Waktu</th>
                                     <th class="p-4 border-b border-outline-variant">Barang Dibeli</th>
                                     <th class="p-4 border-b border-outline-variant">Total Harga</th>
                                     <th class="p-4 border-b border-outline-variant">Pembayaran</th>
+                                    <th v-if="props.auth?.user?.role === 'owner'" class="p-4 border-b border-outline-variant">Kasir</th>
                                     <th class="p-4 border-b border-outline-variant text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody v-if="props.transactions && props.transactions.data">
                                 <tr v-if="props.transactions.data.length === 0">
-                                    <td colspan="5" class="p-8 text-center text-secondary">Belum ada riwayat penjualan.</td>
+                                    <td :colspan="props.auth?.user?.role === 'owner' ? 6 : 5" class="p-8 text-center text-secondary">Belum ada riwayat penjualan untuk periode ini.</td>
                                 </tr>
                                 <tr v-for="txn in props.transactions.data" :key="txn.id" class="hover:bg-primary-container/5 transition-colors group">
                                     <td class="p-4 border-b border-outline-variant">
@@ -213,20 +245,24 @@ const handleLogout = () => {
                                         </div>
                                     </td>
                                     <td class="p-4 font-bold text-on-surface border-b border-outline-variant">
-                                        {{ new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(txn.total) }}
+                                        {{ formatRupiah(txn.total) }}
                                     </td>
                                     <td class="p-4 border-b border-outline-variant">
                                         <span :class="[
                                             'inline-flex items-center gap-1 px-3 py-1 rounded-full text-label-md font-label-md',
-                                            txn.payment_method === 'QRIS' ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-secondary-container'
+                                            txn.payment_method === 'qris' ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-secondary-container'
                                         ]">
-                                            <span class="material-symbols-outlined text-[16px]">{{ txn.payment_method === 'QRIS' ? 'qr_code_2' : 'payments' }}</span> {{ txn.payment_method }}
+                                            <span class="material-symbols-outlined text-[16px]">{{ txn.payment_method === 'qris' ? 'qr_code_2' : 'payments' }}</span>
+                                            {{ txn.payment_method === 'qris' ? 'QRIS' : 'Tunai' }}
                                         </span>
                                     </td>
+                                    <td v-if="props.auth?.user?.role === 'owner'" class="p-4 border-b border-outline-variant text-sm text-secondary">
+                                        {{ txn.cashier || '-' }}
+                                    </td>
                                     <td class="p-4 text-right border-b border-outline-variant">
-                                        <Link :href="`/penjualan/${txn.id}`" class="text-secondary hover:text-primary transition-colors">
+                                        <button @click="openDetail(txn.id)" class="text-secondary hover:text-primary transition-colors">
                                             <span class="material-symbols-outlined">visibility</span>
-                                        </Link>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -234,16 +270,33 @@ const handleLogout = () => {
                     </div>
                     
                     <!-- Pagination -->
-                    <div class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4">
-                        <p class="text-label-md font-label-md text-secondary">Menampilkan 1 sampai 5 dari 148 entri</p>
+                    <div v-if="props.transactions" class="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between flex-wrap gap-4">
+                        <p class="text-label-md font-label-md text-secondary">
+                            Menampilkan {{ props.transactions.from || 0 }}–{{ props.transactions.to || 0 }} dari {{ props.transactions.total || 0 }} transaksi
+                        </p>
                         <div class="flex gap-1">
-                            <button class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors">
+                            <button
+                                @click="goToPage(props.transactions.prev_page_url)"
+                                :disabled="!props.transactions.prev_page_url"
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                                 <span class="material-symbols-outlined">chevron_left</span>
                             </button>
-                            <button class="w-10 h-10 flex items-center justify-center rounded bg-primary text-on-primary font-bold">1</button>
-                            <button class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors">2</button>
-                            <button class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors">3</button>
-                            <button class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors">
+                            <template v-for="link in props.transactions.links" :key="link.label">
+                                <button
+                                    v-if="link.label !== '&laquo; Previous' && link.label !== 'Next &raquo;'"
+                                    @click="goToPage(link.url)"
+                                    :class="[
+                                        'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
+                                        link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
+                                    ]"
+                                    :disabled="!link.url">
+                                    {{ link.label }}
+                                </button>
+                            </template>
+                            <button
+                                @click="goToPage(props.transactions.next_page_url)"
+                                :disabled="!props.transactions.next_page_url"
+                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                                 <span class="material-symbols-outlined">chevron_right</span>
                             </button>
                         </div>
@@ -253,23 +306,117 @@ const handleLogout = () => {
             
             <!-- BottomNavBar (Mobile Only) -->
             <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 md:hidden bg-surface border-t-2 border-outline-variant shadow-lg z-50">
-                <button @click="setTab('dashboard')" class="flex flex-col items-center justify-center text-secondary">
+                <Link href="/dashboard" class="flex flex-col items-center justify-center text-secondary">
                     <span class="material-symbols-outlined">home</span>
                     <span class="text-[10px] font-label-md">Beranda</span>
-                </button>
-                <button @click="setTab('inventory')" class="flex flex-col items-center justify-center text-secondary">
+                </Link>
+                <Link href="/inventaris" class="flex flex-col items-center justify-center text-secondary">
                     <span class="material-symbols-outlined">apps</span>
                     <span class="text-[10px] font-label-md">Inventaris</span>
-                </button>
-                <button @click="setTab('sales')" class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1">
+                </Link>
+                <Link href="/kasir" class="flex flex-col items-center justify-center text-secondary">
                     <span class="material-symbols-outlined">add_shopping_cart</span>
                     <span class="text-[10px] font-label-md">POS</span>
-                </button>
-                <button @click="setTab('reports')" class="flex flex-col items-center justify-center text-secondary">
-                    <span class="material-symbols-outlined">assessment</span>
-                    <span class="text-[10px] font-label-md">Laporan</span>
-                </button>
+                </Link>
+                <Link href="/penjualan" class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-4 py-1">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span class="text-[10px] font-label-md">Penjualan</span>
+                </Link>
             </nav>
         </main>
     </div>
+
+    <!-- Modal Detail Transaksi -->
+    <Transition name="fade">
+        <div v-if="showDetailModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" @click.self="closeDetail">
+            <div class="bg-surface-container-lowest w-full max-w-lg rounded border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-4 bg-surface-container-high border-b border-outline-variant flex justify-between items-center">
+                    <h2 class="text-label-xl font-bold text-on-surface">Detail Transaksi</h2>
+                    <button @click="closeDetail" class="text-on-surface hover:text-error transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div v-if="isLoadingDetail" class="p-8 text-center text-secondary">
+                    <span class="material-symbols-outlined animate-spin text-4xl">progress_activity</span>
+                    <p class="mt-2">Memuat data...</p>
+                </div>
+
+                <div v-if="detailData && !isLoadingDetail" class="overflow-y-auto flex-1 p-6 space-y-4">
+                    <!-- Header Info -->
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p class="text-secondary text-xs uppercase font-bold">No. Transaksi</p>
+                            <p class="font-bold text-on-surface">TX-{{ String(detailData.id).padStart(6, '0') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-secondary text-xs uppercase font-bold">Waktu</p>
+                            <p class="font-bold">{{ detailData.time }} | {{ detailData.date }}</p>
+                        </div>
+                        <div v-if="props.auth?.user?.role === 'owner'">
+                            <p class="text-secondary text-xs uppercase font-bold">Kasir</p>
+                            <p class="font-bold">{{ detailData.cashier }}</p>
+                        </div>
+                        <div>
+                            <p class="text-secondary text-xs uppercase font-bold">Metode Bayar</p>
+                            <p class="font-bold">{{ detailData.payment_method === 'qris' ? 'QRIS' : 'Tunai' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Items -->
+                    <div class="border border-outline-variant rounded overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-surface-container-high">
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-bold text-secondary">Produk</th>
+                                    <th class="px-4 py-2 text-right font-bold text-secondary">Qty</th>
+                                    <th class="px-4 py-2 text-right font-bold text-secondary">Harga/Unit</th>
+                                    <th class="px-4 py-2 text-right font-bold text-secondary">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant">
+                                <tr v-for="item in detailData.items" :key="item.product_id" class="hover:bg-surface-container-low">
+                                    <td class="px-4 py-3 font-semibold text-on-surface">{{ item.product_name }}</td>
+                                    <td class="px-4 py-3 text-right text-secondary">{{ item.qty }} {{ item.unit }}</td>
+                                    <td class="px-4 py-3 text-right">{{ formatRupiah(item.price) }}</td>
+                                    <td class="px-4 py-3 text-right font-bold text-on-surface">{{ formatRupiah(item.subtotal) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="space-y-2 pt-2">
+                        <div class="flex justify-between text-sm text-secondary">
+                            <span>Subtotal</span>
+                            <span>{{ formatRupiah(detailData.subtotal) }}</span>
+                        </div>
+                        <div v-if="detailData.discount > 0" class="flex justify-between text-sm text-secondary">
+                            <span>Diskon</span>
+                            <span class="text-error">- {{ formatRupiah(detailData.discount) }}</span>
+                        </div>
+                        <div class="flex justify-between text-base font-bold text-on-surface pt-2 border-t border-outline-variant">
+                            <span>TOTAL</span>
+                            <span class="text-primary">{{ formatRupiah(detailData.total) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-outline-variant">
+                    <button @click="closeDetail" class="w-full h-12 border border-outline-variant bg-surface-container-low text-on-surface rounded font-bold hover:bg-surface-container-high transition-all">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </Transition>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+</style>
