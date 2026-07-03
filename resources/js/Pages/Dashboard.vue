@@ -580,7 +580,8 @@ const openOwnerMenu = (menuName, path) => {
                                         <div 
                                             v-for="(point, idx) in chartPoints" 
                                             :key="idx" 
-                                            class="absolute top-0 bottom-0 pointer-events-auto cursor-pointer flex flex-col items-center"
+                                            class="absolute top-0 bottom-0 pointer-events-auto cursor-pointer flex flex-col items-center transition-all"
+                                            :class="{ 'z-30': hoveredPoint && hoveredPoint.label === point.label }"
                                             :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%`, width: '40px', transform: 'translateX(-20px)' }"
                                             @mouseenter="selectPoint(point)"
                                             @mouseleave="clearPoint"
@@ -592,7 +593,7 @@ const openOwnerMenu = (menuName, path) => {
                                             <div 
                                                 v-if="hoveredPoint && hoveredPoint.label === point.label" 
                                                 class="absolute bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-lg text-xs font-semibold shadow-md whitespace-nowrap z-20 pointer-events-none transition-all duration-155 text-left border border-outline animate-fade-in"
-                                                :style="[{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 75px)` }, getTooltipStyle(idx, chartPoints.length)]"
+                                                :style="[{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 85px)` }, getTooltipStyle(idx, chartPoints.length)]"
                                             >
                                                 <p class="font-bold text-primary-fixed mb-1">{{ point.full_date }}</p>
                                                 <p class="leading-relaxed">Penjualan: <span class="font-bold text-on-primary-fixed">{{ point.amount }}</span></p>
