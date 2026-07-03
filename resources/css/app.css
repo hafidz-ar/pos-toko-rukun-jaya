@@ -199,6 +199,12 @@
     }
 }
 
+/* Hide default browser-native eye and clear icons on password inputs */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
 /* Print Stylesheet overrides */
 @media print {
     html, body, #app, .h-screen, main, .overflow-hidden, .overflow-y-auto {

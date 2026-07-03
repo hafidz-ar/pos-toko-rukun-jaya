@@ -125,8 +125,7 @@ const handleLogin = () => {
                         </template>
                     </button>
                     
-                    <div class="flex items-center justify-between pt-2">
-                        <a class="text-xs md:text-sm font-semibold text-tertiary hover:underline" href="#">Lupa PIN?</a>
+                    <div class="flex items-center justify-end pt-2">
                         <div class="flex items-center space-x-2">
                             <div class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></div>
                             <span class="text-xs md:text-sm font-semibold text-secondary">Sistem Online</span>
