@@ -425,5 +425,8 @@ class DatabaseSeeder extends Seeder
             'is_read' => false,
             'created_at' => now()->subHours(1),
         ]);
+
+        $this->call(SalesHistorySeeder::class);
     }
 }
+

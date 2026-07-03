@@ -590,9 +590,49 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+@page {
+    margin: 0;
+}
+
 @media print {
-    body * { visibility: hidden; }
-    #receipt-modal, #receipt-modal * { visibility: visible; }
-    #receipt-modal { position: absolute; left: 0; top: 0; }
+    /* Hide all elements on the body except the receipt modal content */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Make the receipt modal container and all its descendants visible */
+    #receipt-modal,
+    #receipt-modal * {
+        visibility: visible;
+    }
+    
+    /* Remove grey/black backdrop background and border lines for print */
+    #receipt-modal {
+        background: white !important;
+        backdrop-filter: none !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: start !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Keep the card design exactly as in the popup menu (rounded, top border, shadow, margins) */
+    #receipt-modal > div {
+        width: 100% !important;
+        max-width: 384px !important; /* matches max-w-sm */
+        margin: 20px auto !important;
+        background: white !important;
+    }
+    
+    /* Hide receipt control buttons (Cetak & Transaksi Baru) during printing */
+    #receipt-modal .flex.gap-2 {
+        display: none !important;
+    }
 }
 </style>
