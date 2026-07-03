@@ -1,4 +1,0 @@
-# Minimal Nixpacks configuration to run migrations before start
-# Let Nixpacks auto-detect packages (PHP/Node) and build steps automatically
-[start]
-cmd = "php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"
