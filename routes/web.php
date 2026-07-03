@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
 
     // Penjualan (Riwayat Transaksi — Owner: semua, Karyawan: sendiri)
     Route::get('/penjualan', [SalesHistoryController::class, 'index'])->name('penjualan');
+    Route::get('/penjualan/export', [SalesHistoryController::class, 'export'])->name('penjualan.export');
     Route::get('/penjualan/{transaction}', [SalesHistoryController::class, 'show'])->name('penjualan.show');
 
     // Restock (Owner + Karyawan with soft-block)

@@ -38,9 +38,9 @@ const handleLogout = () => {
 
 // Filter states
 const search = ref(props.filters?.search || '');
-const paymentMethod = ref(props.filters?.payment_method || 'semua');
-const cashierId = ref(props.filters?.cashier_id || '');
-const sort = ref(props.filters?.sort || 'terbaru');
+const paymentMethod = ref(props.filters?.payment_method || '');
+const cashier_user_id = ref(props.filters?.cashier_user_id || '');
+const sort = ref(props.filters?.sort || 'latest');
 const dateFrom = ref(props.filters?.date_from || '');
 const dateTo = ref(props.filters?.date_to || '');
 const perPage = ref(parseInt(localStorage.getItem('pos_per_page_penjualan') || props.filters?.per_page || '10'));
@@ -50,7 +50,7 @@ const applyFilter = () => {
     router.get('/penjualan', {
         search: search.value || undefined,
         payment_method: paymentMethod.value || undefined,
-        cashier_id: cashierId.value || undefined,
+        cashier_user_id: cashier_user_id.value || undefined,
         sort: sort.value || undefined,
         date_from: dateFrom.value || undefined,
         date_to: dateTo.value || undefined,
@@ -62,9 +62,9 @@ const applyFilter = () => {
 
 const resetFilter = () => {
     search.value = '';
-    paymentMethod.value = 'semua';
-    cashierId.value = '';
-    sort.value = 'terbaru';
+    paymentMethod.value = '';
+    cashier_user_id.value = '';
+    sort.value = 'latest';
     dateFrom.value = '';
     dateTo.value = '';
     router.get('/penjualan', {
@@ -80,13 +80,41 @@ onMounted(() => {
         router.get('/penjualan', {
             search: search.value || undefined,
             payment_method: paymentMethod.value || undefined,
-            cashier_id: cashierId.value || undefined,
+            cashier_user_id: cashier_user_id.value || undefined,
             sort: sort.value || undefined,
             date_from: dateFrom.value || undefined,
             date_to: dateTo.value || undefined,
             per_page: savedPerPage
         }, { replace: true, preserveState: false });
     }
+});
+
+// Export state
+const isExporting = ref(false);
+
+const exportExcel = () => {
+    if (isExporting.value) return;
+
+    isExporting.value = true;
+
+    const params = new URLSearchParams({
+        search: search.value || '',
+        payment_method: paymentMethod.value || '',
+        cashier_user_id: cashier_user_id.value || '',
+        date_from: dateFrom.value || '',
+        date_to: dateTo.value || '',
+        sort: sort.value || 'latest',
+    });
+
+    window.location.href = `/penjualan/export?${params.toString()}`;
+
+    window.setTimeout(() => {
+        isExporting.value = false;
+    }, 2000);
+};
+
+window.addEventListener('focus', () => {
+    isExporting.value = false;
 });
 
 // Detail transaksi modal
@@ -148,8 +176,8 @@ const activeFilterContext = computed(() => {
     }
     
     // 3. Kasir
-    if (props.filters?.cashier_id) {
-        const cashierObj = props.cashiers?.find(c => c.id == props.filters.cashier_id);
+    if (props.filters?.cashier_user_id) {
+        const cashierObj = props.cashiers?.find(c => c.id == props.filters.cashier_user_id);
         if (cashierObj) {
             parts.push(`Kasir: ${cashierObj.name}`);
         } else if (props.auth?.user?.role !== 'owner') {
@@ -162,10 +190,10 @@ const activeFilterContext = computed(() => {
     // 4. Urutan
     if (props.filters?.sort) {
         const sortLabels = {
-            'terbaru': 'Terbaru',
-            'terlama': 'Terlama',
-            'harga_tertinggi': 'Harga Tertinggi',
-            'harga_terendah': 'Harga Terendah',
+            'latest': 'Terbaru',
+            'oldest': 'Terlama',
+            'highest_price': 'Harga Tertinggi',
+            'lowest_price': 'Harga Terendah',
         };
         parts.push(`Urutan: ${sortLabels[props.filters.sort] || 'Terbaru'}`);
     }
@@ -311,7 +339,7 @@ const formatDateLabel = (dateStr) => {
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Metode Pembayaran</label>
                             <BaseSelect v-model="paymentMethod" size="small" class="w-full">
-                                <option value="semua">Semua Pembayaran</option>
+                                <option value="">Semua Pembayaran</option>
                                 <option value="tunai">Tunai</option>
                                 <option value="qris">QRIS</option>
                             </BaseSelect>
@@ -319,7 +347,7 @@ const formatDateLabel = (dateStr) => {
 
                         <div v-if="props.auth?.user?.role === 'owner'" class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Kasir</label>
-                            <BaseSelect v-model="cashierId" size="small" class="w-full">
+                            <BaseSelect v-model="cashier_user_id" size="small" class="w-full">
                                 <option value="">Semua Kasir</option>
                                 <option v-for="cashier in props.cashiers" :key="cashier.id" :value="cashier.id">
                                     {{ cashier.name }} ({{ cashier.username }})
@@ -343,24 +371,39 @@ const formatDateLabel = (dateStr) => {
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Urutkan</label>
                             <BaseSelect v-model="sort" size="small" class="w-full">
-                                <option value="terbaru">Transaksi Terbaru</option>
-                                <option value="terlama">Transaksi Terlama</option>
-                                <option value="harga_tertinggi">Total Harga Tertinggi</option>
-                                <option value="harga_terendah">Total Harga Terendah</option>
+                                <option value="latest">Transaksi Terbaru</option>
+                                <option value="oldest">Transaksi Terlama</option>
+                                <option value="highest_price">Total Harga Tertinggi</option>
+                                <option value="lowest_price">Total Harga Terendah</option>
                             </BaseSelect>
                         </div>
                     </div>
 
                     <!-- Baris 3: Aksi tombol -->
-                    <div class="flex justify-start gap-2 pt-2 border-t border-outline-variant">
-                        <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-6 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">filter_list</span>
-                            Terapkan Filter
-                        </button>
-                        <button @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-6 rounded font-bold text-secondary hover:bg-surface-container-high transition-all flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">clear_all</span>
-                            Reset
-                        </button>
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-outline-variant">
+                        <div class="flex gap-2">
+                            <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-6 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">filter_list</span>
+                                Terapkan Filter
+                            </button>
+                            <button @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-6 rounded font-bold text-secondary hover:bg-surface-container-high transition-all flex items-center gap-2 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">restart_alt</span>
+                                Atur Ulang
+                            </button>
+                        </div>
+                        <div class="hidden md:block w-px h-6 bg-outline-variant"></div>
+                        <div class="w-full md:w-auto">
+                            <button 
+                                type="button"
+                                @click="exportExcel" 
+                                :disabled="isExporting"
+                                class="w-full md:w-auto h-10 border border-emerald-600 bg-emerald-600 px-6 rounded font-bold text-white hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                            >
+                                <span class="material-symbols-outlined text-sm" v-if="!isExporting">download</span>
+                                <span class="material-symbols-outlined text-sm animate-spin" v-else>progress_activity</span>
+                                <span>{{ isExporting ? 'Menyiapkan file...' : 'Ekspor Excel' }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
