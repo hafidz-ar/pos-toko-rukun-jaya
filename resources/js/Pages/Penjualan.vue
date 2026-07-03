@@ -233,7 +233,7 @@ const formatDateLabel = (dateStr) => {
                 <!-- Sales Tab (Active) -->
                 <Link href="/penjualan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer bg-secondary-container text-on-secondary-container text-label-md font-label-md">
                     <span class="material-symbols-outlined">point_of_sale</span>
-                    <span>Penjualan</span>
+                    <span>Riwayat Penjualan</span>
                 </Link>
 
                 <!-- Reports Tab -->

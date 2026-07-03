@@ -343,7 +343,7 @@ const linkTelegram = () => {
                 </Link>
                 <Link href="/penjualan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">point_of_sale</span>
-                    <span>Penjualan</span>
+                    <span>Riwayat Penjualan</span>
                 </Link>
                 <Link href="/laporan" class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md">
                     <span class="material-symbols-outlined">analytics</span>
