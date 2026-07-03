@@ -93,6 +93,63 @@ const formatShortRupiah = (v) => {
     return formatRupiah(v);
 };
 
+const preventInvalidNumberKeys = (event) => {
+    const invalidKeys = ['-', '+', 'e', 'E'];
+    if (invalidKeys.includes(event.key)) {
+        event.preventDefault();
+    }
+};
+
+const preventInvalidNumberPaste = (event) => {
+    const pastedText = event.clipboardData.getData('text');
+    if (/[eE+\-]/.test(pastedText)) {
+        event.preventDefault();
+    }
+};
+
+const normalizeNumber = (value, minimum = 0, fallback = minimum, isOptional = false) => {
+    if (isOptional && (value === '' || value === null || value === undefined)) {
+        return value;
+    }
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue < minimum) {
+        return fallback;
+    }
+    return numericValue;
+};
+
+// Normalisasi Tambah Produk (addForm)
+const normalizeAddSellingPrice = () => {
+    addForm.selling_price_per_base_unit = normalizeNumber(addForm.selling_price_per_base_unit, 0, 0);
+};
+const normalizeAddCostPrice = () => {
+    addForm.cost_price_per_base_unit = normalizeNumber(addForm.cost_price_per_base_unit, 0, 0);
+};
+const normalizeAddStockQty = () => {
+    addForm.stock_qty_base_unit = normalizeNumber(addForm.stock_qty_base_unit, 0, 0, true);
+};
+const normalizeAddMinStock = () => {
+    addForm.min_stock_threshold = normalizeNumber(addForm.min_stock_threshold, 0, 0, true);
+};
+const normalizeAddUnitConversion = (unit) => {
+    unit.conversion_factor = normalizeNumber(unit.conversion_factor, 0.0001, 0.0001);
+    unit.selling_price = normalizeNumber(unit.selling_price, 0, 0, true);
+};
+
+// Normalisasi Edit Produk (editForm)
+const normalizeEditSellingPrice = () => {
+    editForm.selling_price_per_base_unit = normalizeNumber(editForm.selling_price_per_base_unit, 0, 0);
+};
+const normalizeEditMinStock = () => {
+    editForm.min_stock_threshold = normalizeNumber(editForm.min_stock_threshold, 0, 0, true);
+};
+const normalizeEditUnitConversion = (unit) => {
+    unit.conversion_factor = normalizeNumber(unit.conversion_factor, 0.0001, 0.0001);
+    unit.selling_price = normalizeNumber(unit.selling_price, 0, 0, true);
+};
+
+const currentProductCostPrice = ref(0);
+
 // ───────── Modal Tambah Produk ─────────
 const showAddModal = ref(false);
 const addForm = reactive({
@@ -147,8 +204,66 @@ const removeUnit = (i) => {
 };
 
 const submitAdd = () => {
-    isAddSubmitting.value = true;
     addErrors.value = {};
+
+    // Validasi harga jual vs harga modal
+    if (Number(addForm.selling_price_per_base_unit) < Number(addForm.cost_price_per_base_unit)) {
+        addErrors.value = { selling_price_per_base_unit: 'Harga jual tidak boleh kurang dari harga HPP.' };
+        return;
+    }
+
+    if (addForm.stock_qty_base_unit !== '' && addForm.stock_qty_base_unit !== null && addForm.stock_qty_base_unit !== undefined) {
+        if (Number(addForm.stock_qty_base_unit) < 0) {
+            addErrors.value = { stock_qty_base_unit: 'Stok awal tidak boleh kurang dari 0.' };
+            return;
+        }
+    }
+
+    if (addForm.min_stock_threshold !== '' && addForm.min_stock_threshold !== null && addForm.min_stock_threshold !== undefined) {
+        if (Number(addForm.min_stock_threshold) < 0) {
+            addErrors.value = { min_stock_threshold: 'Batas stok minimum tidak boleh kurang dari 0.' };
+            return;
+        }
+    }
+
+    // Validasi satuan alternatif
+    if (addForm.units && addForm.units.length > 0) {
+        const unitIds = [];
+        for (const unit of addForm.units) {
+            if (!unit.unit_id) {
+                addErrors.value = { units: 'Satuan alternatif belum lengkap.' };
+                return;
+            }
+            if (unit.unit_id === addForm.base_unit_id) {
+                addErrors.value = { units: 'Satuan dasar tidak boleh sama dengan satuan alternatif.' };
+                return;
+            }
+            const factor = Number(unit.conversion_factor);
+            if (!Number.isFinite(factor) || factor < 0.0001) {
+                addErrors.value = { units: 'Faktor konversi harus minimal 0.0001.' };
+                return;
+            }
+            if (unit.selling_price !== '' && unit.selling_price !== null && unit.selling_price !== undefined) {
+                const price = Number(unit.selling_price);
+                if (!Number.isFinite(price) || price < 0) {
+                    addErrors.value = { units: 'Harga jual alternatif tidak boleh kurang dari 0.' };
+                    return;
+                }
+                const unitHpp = factor * Number(addForm.cost_price_per_base_unit);
+                if (price < unitHpp) {
+                    addErrors.value = { units: 'Harga jual satuan alternatif tidak boleh kurang dari harga modal konversinya.' };
+                    return;
+                }
+            }
+            unitIds.push(unit.unit_id);
+        }
+        if (new Set(unitIds).size !== unitIds.length) {
+            addErrors.value = { units: 'Satuan alternatif tidak boleh duplikat.' };
+            return;
+        }
+    }
+
+    isAddSubmitting.value = true;
     router.post('/products', addForm, {
         onSuccess: () => {
             showAddModal.value = false;
@@ -191,6 +306,7 @@ const handleEditPhotoChange = (e) => {
 };
 
 const openEditModal = (product) => {
+    currentProductCostPrice.value = Number(product.cost_price_per_base_unit || 0);
     Object.assign(editForm, {
         id: product.id,
         name: product.name,
@@ -221,8 +337,59 @@ const removeEditUnit = (i) => {
 };
 
 const submitEdit = () => {
-    isEditSubmitting.value = true;
     editErrors.value = {};
+
+    // Validasi harga jual vs harga modal
+    if (Number(editForm.selling_price_per_base_unit) < currentProductCostPrice.value) {
+        editErrors.value = { selling_price_per_base_unit: 'Harga jual tidak boleh kurang dari harga HPP.' };
+        return;
+    }
+
+    if (editForm.min_stock_threshold !== '' && editForm.min_stock_threshold !== null && editForm.min_stock_threshold !== undefined) {
+        if (Number(editForm.min_stock_threshold) < 0) {
+            editErrors.value = { min_stock_threshold: 'Batas stok minimum tidak boleh kurang dari 0.' };
+            return;
+        }
+    }
+
+    // Validasi satuan alternatif
+    if (editForm.units && editForm.units.length > 0) {
+        const unitIds = [];
+        for (const unit of editForm.units) {
+            if (!unit.unit_id) {
+                editErrors.value = { units: 'Satuan alternatif belum lengkap.' };
+                return;
+            }
+            if (unit.unit_id === editForm.base_unit_id) {
+                editErrors.value = { units: 'Satuan dasar tidak boleh sama dengan satuan alternatif.' };
+                return;
+            }
+            const factor = Number(unit.conversion_factor);
+            if (!Number.isFinite(factor) || factor < 0.0001) {
+                editErrors.value = { units: 'Faktor konversi harus minimal 0.0001.' };
+                return;
+            }
+            if (unit.selling_price !== '' && unit.selling_price !== null && unit.selling_price !== undefined) {
+                const price = Number(unit.selling_price);
+                if (!Number.isFinite(price) || price < 0) {
+                    editErrors.value = { units: 'Harga jual alternatif tidak boleh kurang dari 0.' };
+                    return;
+                }
+                const unitHpp = factor * currentProductCostPrice.value;
+                if (price < unitHpp) {
+                    editErrors.value = { units: 'Harga jual satuan alternatif tidak boleh kurang dari harga modal konversinya.' };
+                    return;
+                }
+            }
+            unitIds.push(unit.unit_id);
+        }
+        if (new Set(unitIds).size !== unitIds.length) {
+            editErrors.value = { units: 'Satuan alternatif tidak boleh duplikat.' };
+            return;
+        }
+    }
+
+    isEditSubmitting.value = true;
 
     // Spoof PUT via POST for multipart data support
     const formData = {
@@ -575,19 +742,54 @@ const closeMovements = () => {
 
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Harga Jual (Rp) *</label>
-                            <input v-model="addForm.selling_price_per_base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="0" type="number" min="0" required>
+                            <input 
+                                v-model.number="addForm.selling_price_per_base_unit" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeAddSellingPrice"
+                                @change="normalizeAddSellingPrice"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                placeholder="0" 
+                                type="number" 
+                                min="0" 
+                                step="1"
+                                required
+                            />
                             <p v-if="addErrors.selling_price_per_base_unit" class="text-error text-xs mt-1">{{ addErrors.selling_price_per_base_unit }}</p>
                         </div>
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Harga Modal / HPP (Rp) *</label>
-                            <input v-model="addForm.cost_price_per_base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="0" type="number" min="0" required>
+                            <input 
+                                v-model.number="addForm.cost_price_per_base_unit" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeAddCostPrice"
+                                @change="normalizeAddCostPrice"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                placeholder="0" 
+                                type="number" 
+                                min="0" 
+                                step="1"
+                                required
+                            />
                             <p class="text-xs text-secondary mt-1">HPP selanjutnya hanya bisa diubah via Restock</p>
                         </div>
 
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Stok Awal</label>
-                            <input v-model="addForm.stock_qty_base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="0" type="number" min="0">
+                            <input 
+                                v-model.number="addForm.stock_qty_base_unit" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeAddStockQty"
+                                @change="normalizeAddStockQty"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                placeholder="0" 
+                                type="number" 
+                                min="0"
+                                step="any"
+                            />
                         </div>
 
                         <div>
@@ -597,7 +799,18 @@ const closeMovements = () => {
 
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Batas Stok Minimum</label>
-                            <input v-model="addForm.min_stock_threshold" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" placeholder="10" type="number" min="0">
+                            <input 
+                                v-model.number="addForm.min_stock_threshold" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeAddMinStock"
+                                @change="normalizeAddMinStock"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                placeholder="10" 
+                                type="number" 
+                                min="0"
+                                step="1"
+                            />
                         </div>
 
                         <div class="md:col-span-2">
@@ -629,14 +842,38 @@ const closeMovements = () => {
                                 </div>
                                 <div class="w-24 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>
-                                    <input v-model="unit.conversion_factor" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Faktor" type="number" min="0.0001" max="1000000" step="any" required>
+                                    <input 
+                                        v-model.number="unit.conversion_factor" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeAddUnitConversion(unit)"
+                                        @change="normalizeAddUnitConversion(unit)"
+                                        class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" 
+                                        placeholder="Faktor" 
+                                        type="number" 
+                                        min="0.0001" 
+                                        max="1000000" 
+                                        step="any" 
+                                        required
+                                    />
                                 </div>
                                 <div class="flex items-end pb-2 text-secondary text-xs font-bold shrink-0 self-end h-[38px]">
                                     = {{ unit.conversion_factor || 'X' }} {{ getBaseUnitName(addForm.base_unit_id) }}
                                 </div>
                                 <div class="w-32 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Harga Jual (Rp)</label>
-                                    <input v-model="unit.selling_price" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Dihitung otomatis" type="number" min="0">
+                                    <input 
+                                        v-model.number="unit.selling_price" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeAddUnitConversion(unit)"
+                                        @change="normalizeAddUnitConversion(unit)"
+                                        class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" 
+                                        placeholder="Dihitung otomatis" 
+                                        type="number" 
+                                        min="0"
+                                        step="1"
+                                    />
                                 </div>
                                 <button type="button" @click="removeUnit(i)" class="text-error hover:text-error/80 shrink-0 self-end pb-2">
                                     <span class="material-symbols-outlined text-sm">delete</span>
@@ -698,7 +935,18 @@ const closeMovements = () => {
 
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Harga Jual (Rp) *</label>
-                            <input v-model="editForm.selling_price_per_base_unit" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" type="number" min="0" required>
+                            <input 
+                                v-model.number="editForm.selling_price_per_base_unit" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeEditSellingPrice"
+                                @change="normalizeEditSellingPrice"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                type="number" 
+                                min="0" 
+                                step="1"
+                                required
+                            />
                         </div>
 
                         <div>
@@ -708,7 +956,17 @@ const closeMovements = () => {
 
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Batas Stok Minimum</label>
-                            <input v-model="editForm.min_stock_threshold" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" type="number" min="0">
+                            <input 
+                                v-model.number="editForm.min_stock_threshold" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeEditMinStock"
+                                @change="normalizeEditMinStock"
+                                class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" 
+                                type="number" 
+                                min="0"
+                                step="1"
+                            />
                         </div>
 
                         <div class="md:col-span-2">
@@ -747,14 +1005,38 @@ const closeMovements = () => {
                                 </div>
                                 <div class="w-24 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>
-                                    <input v-model="unit.conversion_factor" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Faktor" type="number" min="0.0001" max="1000000" step="any" required>
+                                    <input 
+                                        v-model.number="unit.conversion_factor" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeEditUnitConversion(unit)"
+                                        @change="normalizeEditUnitConversion(unit)"
+                                        class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" 
+                                        placeholder="Faktor" 
+                                        type="number" 
+                                        min="0.0001" 
+                                        max="1000000" 
+                                        step="any" 
+                                        required
+                                    />
                                 </div>
                                 <div class="flex items-end pb-2 text-secondary text-xs font-bold shrink-0 self-end h-[38px]">
                                     = {{ unit.conversion_factor || 'X' }} {{ getBaseUnitName(editForm.base_unit_id) }}
                                 </div>
                                 <div class="w-32 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Harga Jual (Rp)</label>
-                                    <input v-model="unit.selling_price" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" placeholder="Dihitung otomatis" type="number" min="0">
+                                    <input 
+                                        v-model.number="unit.selling_price" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeEditUnitConversion(unit)"
+                                        @change="normalizeEditUnitConversion(unit)"
+                                        class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" 
+                                        placeholder="Dihitung otomatis" 
+                                        type="number" 
+                                        min="0"
+                                        step="1"
+                                    />
                                 </div>
                                 <button type="button" @click="removeEditUnit(i)" class="text-error hover:text-error/80 shrink-0 self-end pb-2">
                                     <span class="material-symbols-outlined text-sm">delete</span>

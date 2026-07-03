@@ -127,6 +127,39 @@ const handleProductChange = () => {
     form.value.location = selectedProduct.value ? selectedProduct.value.location : '';
 };
 
+const preventInvalidNumberKeys = (event) => {
+    const invalidKeys = ['-', '+', 'e', 'E'];
+    if (invalidKeys.includes(event.key)) {
+        event.preventDefault();
+    }
+};
+
+const preventInvalidNumberPaste = (event) => {
+    const pastedText = event.clipboardData.getData('text');
+    if (/[eE+\-]/.test(pastedText)) {
+        event.preventDefault();
+    }
+};
+
+const normalizeNumber = (value, minimum = 0, fallback = minimum, isOptional = false) => {
+    if (isOptional && (value === '' || value === null || value === undefined)) {
+        return value;
+    }
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue < minimum) {
+        return fallback;
+    }
+    return numericValue;
+};
+
+const normalizeQty = () => {
+    form.value.qty = normalizeNumber(form.value.qty, 0.01, 0.01);
+};
+
+const normalizeCostPrice = () => {
+    form.value.cost_price_per_base_unit = normalizeNumber(form.value.cost_price_per_base_unit, 0, 0);
+};
+
 const getXsrfToken = () => {
     const match = document.cookie.match(new RegExp('(^| )XSRF-TOKEN=([^;]+)'));
     return match ? decodeURIComponent(match[2]) : '';
@@ -135,6 +168,16 @@ const getXsrfToken = () => {
 const submitRestock = async () => {
     if (!form.value.product_id || !form.value.qty || !form.value.unit_name || !form.value.cost_price_per_base_unit) {
         triggerToast('Harap lengkapi semua field yang wajib.');
+        return;
+    }
+
+    if (!Number.isFinite(Number(form.value.qty)) || Number(form.value.qty) < 0.01) {
+        triggerToast('Jumlah restok harus minimal 0.01.');
+        return;
+    }
+
+    if (!Number.isFinite(Number(form.value.cost_price_per_base_unit)) || Number(form.value.cost_price_per_base_unit) < 0) {
+        triggerToast('HPP per unit dasar tidak boleh kurang dari 0.');
         return;
     }
 
@@ -429,7 +472,19 @@ const formatRupiah = (number) => {
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-semibold text-on-surface mb-1">Qty <span class="text-error">*</span></label>
-                                    <input v-model="form.qty" type="number" step="0.01" min="0.01" placeholder="Contoh: 10" class="w-full bg-surface border border-outline rounded-lg px-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required>
+                                    <input 
+                                        v-model.number="form.qty" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeQty"
+                                        @change="normalizeQty"
+                                        type="number" 
+                                        step="0.01" 
+                                        min="0.01" 
+                                        placeholder="Contoh: 10" 
+                                        class="w-full bg-surface border border-outline rounded-lg px-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" 
+                                        required
+                                    >
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-on-surface mb-1">Satuan <span class="text-error">*</span></label>
@@ -446,7 +501,20 @@ const formatRupiah = (number) => {
                                 <label class="block text-sm font-semibold text-on-surface mb-1">HPP per Unit Dasar ({{ selectedProduct ? selectedProduct.base_unit : '-' }}) <span class="text-error">*</span></label>
                                 <div class="relative">
                                     <span class="absolute left-4 top-2 text-on-surface-variant">Rp</span>
-                                    <input v-model="form.cost_price_per_base_unit" type="number" step="1" min="0" placeholder="0" class="w-full bg-surface border border-outline rounded-lg pl-10 pr-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required :disabled="!form.product_id">
+                                    <input 
+                                        v-model.number="form.cost_price_per_base_unit" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeCostPrice"
+                                        @change="normalizeCostPrice"
+                                        type="number" 
+                                        step="1" 
+                                        min="0" 
+                                        placeholder="0" 
+                                        class="w-full bg-surface border border-outline rounded-lg pl-10 pr-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" 
+                                        required 
+                                        :disabled="!form.product_id"
+                                    >
                                 </div>
                                 <p v-if="selectedProduct" class="text-xs text-secondary mt-1">HPP saat ini: {{ formatRupiah(selectedProduct.cost_price_per_base_unit) }}</p>
                             </div>
