@@ -17,17 +17,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Salin seluruh project terlebih dahulu agar artisan tersedia
 COPY . .
 
-# Install PHP dependency setelah artisan sudah ada
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Build asset Inertia Vue
 RUN npm install && npm run build
-
-# Bersihkan cache Laravel
-RUN php artisan optimize:clear
 
 EXPOSE 8080
 
