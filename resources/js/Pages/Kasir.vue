@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     products: Array,
@@ -253,33 +253,124 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown);
 });
+
+const handleLogout = () => {
+    router.post('/logout');
+};
 </script>
 
 <template>
     <Head title="Kasir - Toko Rukun Jaya" />
     
-    <div class="bg-background text-on-background font-body-md overflow-hidden h-screen">
-        <!-- Focused POS Header -->
-        <header class="flex items-center justify-between px-margin-desktop py-4 bg-surface-container-lowest border-b border-outline-variant h-16">
-            <div class="flex items-center gap-4">
-                <button @click="router.visit('/dashboard')" class="flex items-center justify-center p-2 rounded hover:bg-surface-container h-10 w-10 transition-colors">
-                    <span class="material-symbols-outlined text-on-surface">arrow_back</span>
-                </button>
-                <h1 class="text-headline-md text-on-surface">Transaksi Baru</h1>
+    <div class="fixed inset-0 bg-background text-on-background flex flex-col md:flex-row overflow-hidden w-full h-full font-sans">
+        
+        <!-- Top Navigation Bar (Mobile only) -->
+        <nav class="md:hidden flex justify-between items-center w-full px-margin-mobile h-touch-target-min bg-surface border-b-2 border-outline-variant shrink-0 z-30">
+            <span class="text-headline-md font-headline-md font-bold text-primary">Toko Rukun Jaya</span>
+            <div class="flex gap-4">
+                <button @click="handleLogout" class="material-symbols-outlined text-error active:scale-90 transition-transform" title="Keluar">logout</button>
             </div>
-            <div class="flex items-center gap-base">
-                <div class="flex flex-col items-end mr-4">
-                    <p class="text-label-md text-on-surface-variant">{{ props.auth?.user?.name }}</p>
-                    <p class="text-xs text-outline">Terminal: POS-01</p>
-                </div>
-                <div class="size-10 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant">
-                    <span class="material-symbols-outlined text-primary">person</span>
-                </div>
-            </div>
-        </header>
+        </nav>
 
-        <!-- Main POS Interface -->
-        <main class="flex flex-row h-[calc(100vh-64px)] overflow-hidden">
+        <!-- Side Navigation Bar (Desktop) -->
+        <aside class="hidden md:flex flex-col h-full w-64 bg-surface-container border-r-2 border-outline-variant py-base px-base space-y-2 shrink-0 z-30">
+            <div class="px-4 py-6">
+                <h1 class="text-headline-md font-headline-md text-primary font-bold">Toko Rukun Jaya</h1>
+            </div>
+            
+            <div class="flex flex-col gap-1 flex-1">
+                <!-- Dashboard Tab -->
+                <Link 
+                    href="/dashboard"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </Link>
+
+                <!-- Inventory Tab -->
+                <Link 
+                    href="/inventaris"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span>Inventaris</span>
+                </Link>
+
+                <!-- Restock Tab -->
+                <Link 
+                    href="/restock"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span>Restok</span>
+                </Link>
+
+                <!-- Sales Tab -->
+                <Link 
+                    href="/penjualan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">point_of_sale</span>
+                    <span>Penjualan</span>
+                </Link>
+
+                <!-- Reports Tab -->
+                <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
+                    href="/laporan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Laporan</span>
+                </Link>
+
+                <!-- Settings Tab -->
+                <Link 
+                    v-if="props.auth?.user?.role === 'owner'"
+                    href="/pengaturan"
+                    class="flex items-center gap-3 px-4 min-h-[48px] font-bold rounded transition-all active:translate-y-[1px] text-left w-full cursor-pointer text-secondary hover:bg-surface-container-high text-label-md font-label-md"
+                >
+                    <span class="material-symbols-outlined">settings</span>
+                    <span>Pengaturan</span>
+                </Link>
+            </div>
+
+            <!-- Profile & New Transaction Area -->
+            <div class="mt-auto border-t border-outline-variant pt-4 pb-2 px-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded bg-secondary text-on-secondary flex items-center justify-center font-bold">A</div>
+                        <div>
+                            <p class="text-label-md font-label-md leading-none">{{ props.auth?.user?.name }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ props.auth?.user?.role === 'owner' ? 'Owner' : 'Karyawan' }}</p>
+                        </div>
+                    </div>
+                    <!-- Logout button on desktop -->
+                    <button @click="handleLogout" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer" title="Keluar dari sistem">
+                        logout
+                    </button>
+                </div>
+                <button 
+                    @click="router.visit('/kasir')" 
+                    class="w-full bg-primary text-on-primary font-bold min-h-[48px] rounded hover:brightness-90 active:translate-y-[1px] transition-all cursor-pointer shadow border-2 border-primary"
+                >
+                    Transaksi Baru
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-background">
+            <!-- TopNavBar -->
+            <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min bg-surface border-b-2 border-outline-variant shrink-0">
+                <div class="flex items-center gap-4">
+                    <span class="text-headline-md font-headline-md font-bold text-primary">Transaksi Baru</span>
+                </div>
+            </header>
+
+            <!-- Main POS Interface -->
+            <div class="flex-grow flex flex-row overflow-hidden">
             <!-- Left Column: Daftar Produk (70%) -->
             <section class="w-[70%] flex flex-col border-r border-outline-variant bg-surface-container-low overflow-hidden">
                 <div class="p-gutter flex flex-col h-full bg-surface-container-low">
@@ -399,7 +490,8 @@ onUnmounted(() => {
                     </div>
                 </div>
             </aside>
-        </main>
+        </div>
+    </main>
 
         <!-- Modal Pilih Unit -->
         <Transition name="fade">

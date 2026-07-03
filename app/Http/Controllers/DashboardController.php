@@ -130,16 +130,16 @@ class DashboardController extends Controller
 
         // E. Grafik Penjualan Harian - Scoped & Validated
         $chartPeriod = $request->get('chart_period', '7_hari');
-        if (!in_array($chartPeriod, ['7_hari', '30_hari', 'bulan_ini'])) {
+        if (!in_array($chartPeriod, ['7_hari', '14_hari', '30_hari'])) {
             $chartPeriod = '7_hari';
         }
 
         $chartData = [];
         $daysCount = 7;
-        if ($chartPeriod === '30_hari') {
+        if ($chartPeriod === '14_hari') {
+            $daysCount = 14;
+        } elseif ($chartPeriod === '30_hari') {
             $daysCount = 30;
-        } elseif ($chartPeriod === 'bulan_ini') {
-            $daysCount = $now->day; // Dari tanggal 1 s.d. hari ini saja
         }
 
         $indonesianDays = [

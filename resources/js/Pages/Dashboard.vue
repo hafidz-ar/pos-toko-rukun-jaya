@@ -503,6 +503,15 @@ const openOwnerMenu = (menuName, path) => {
                                         7 Hari
                                     </button>
                                     <button 
+                                        @click="changeChartPeriod('14_hari')"
+                                        :class="[
+                                            'px-3 py-1.5 rounded-md transition-all cursor-pointer',
+                                            chartPeriodRef === '14_hari' ? 'bg-primary text-on-primary shadow font-bold' : 'text-secondary hover:text-on-surface'
+                                        ]"
+                                    >
+                                        14 Hari
+                                    </button>
+                                    <button 
                                         @click="changeChartPeriod('30_hari')"
                                         :class="[
                                             'px-3 py-1.5 rounded-md transition-all cursor-pointer',
@@ -510,15 +519,6 @@ const openOwnerMenu = (menuName, path) => {
                                         ]"
                                     >
                                         30 Hari
-                                    </button>
-                                    <button 
-                                        @click="changeChartPeriod('bulan_ini')"
-                                        :class="[
-                                            'px-3 py-1.5 rounded-md transition-all cursor-pointer',
-                                            chartPeriodRef === 'bulan_ini' ? 'bg-primary text-on-primary shadow font-bold' : 'text-secondary hover:text-on-surface'
-                                        ]"
-                                    >
-                                        Bulan Ini
                                     </button>
                                 </div>
                             </div>
