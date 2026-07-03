@@ -114,17 +114,40 @@ const totalAmount = computed(() => {
     return Math.max(0, subtotal.value - (discount.value || 0));
 });
 
-watch(discount, (val) => {
-    if (val < 0 || isNaN(val) || val === '') {
-        discount.value = 0;
-    } else if (val > subtotal.value) {
-        discount.value = subtotal.value;
-    }
-});
-
 const preventInvalidNumberKeys = (event) => {
-    if (['-', '+', 'e', 'E'].includes(event.key)) {
+    const invalidKeys = ['-', '+', 'e', 'E'];
+    if (invalidKeys.includes(event.key)) {
         event.preventDefault();
+    }
+};
+
+const preventInvalidNumberPaste = (event) => {
+    const pastedText = event.clipboardData.getData('text');
+    if (/[eE+\-]/.test(pastedText)) {
+        event.preventDefault();
+    }
+};
+
+const normalizeQty = (item) => {
+    const qty = Number(item.qty);
+    if (!Number.isFinite(qty) || qty < 1) {
+        item.qty = 1;
+    }
+};
+
+const normalizeCashInput = () => {
+    const cash = Number(cashInput.value);
+    if (!Number.isFinite(cash) || cash < 0) {
+        cashInput.value = 0;
+    }
+};
+
+const normalizeDiscount = () => {
+    const discountValue = Number(discount.value);
+    if (!Number.isFinite(discountValue) || discountValue < 0) {
+        discount.value = 0;
+    } else if (discountValue > subtotal.value) {
+        discount.value = subtotal.value;
     }
 };
 
@@ -141,6 +164,18 @@ const formatRupiah = (number) => {
 
 const openConfirmation = () => {
     if (cart.value.length === 0) return;
+
+    // Normalisasi semua qty dan diskon sebelum membuka modal konfirmasi
+    cart.value.forEach(item => normalizeQty(item));
+    normalizeDiscount();
+
+    const hasInvalidQty = cart.value.some(
+        (item) => !Number.isFinite(Number(item.qty)) || Number(item.qty) < 1
+    );
+    if (hasInvalidQty) {
+        return;
+    }
+
     errorMessage.value = '';
     cashInput.value = totalAmount.value;
     showConfirmationModal.value = true;
@@ -159,6 +194,26 @@ const openReceipt = (data) => {
 
 const confirmPayment = () => {
     if (cart.value.length === 0) return;
+
+    // Validasi input di frontend sebelum pengiriman transaksi
+    const hasInvalidQty = cart.value.some(
+        (item) => !Number.isFinite(Number(item.qty)) || Number(item.qty) < 1
+    );
+    if (hasInvalidQty) {
+        errorMessage.value = 'Jumlah produk harus minimal 1.';
+        return;
+    }
+
+    if (!Number.isFinite(Number(cashInput.value)) || Number(cashInput.value) < 0) {
+        errorMessage.value = 'Uang diterima tidak boleh kurang dari 0.';
+        return;
+    }
+
+    if (!Number.isFinite(Number(discount.value)) || Number(discount.value) < 0) {
+        errorMessage.value = 'Diskon tidak boleh kurang dari 0.';
+        return;
+    }
+
     if (selectedPaymentMethod.value === 'tunai' && cashInput.value < totalAmount.value) {
         errorMessage.value = 'Uang tunai tidak mencukupi.';
         return;
@@ -444,7 +499,17 @@ const handleLogout = () => {
                             </div>
                             <div class="flex justify-between items-center mt-1">
                                 <div class="flex items-center gap-2">
-                                    <input v-model.number="item.qty" type="number" min="1" class="w-16 h-7 bg-surface border border-outline rounded px-1 text-center text-sm focus:ring-1 focus:ring-primary focus:outline-none" />
+                                    <input 
+                                        v-model.number="item.qty" 
+                                        @keydown="preventInvalidNumberKeys" 
+                                        @paste="preventInvalidNumberPaste"
+                                        @blur="normalizeQty(item)"
+                                        @change="normalizeQty(item)"
+                                        type="number" 
+                                        min="1" 
+                                        step="1"
+                                        class="w-16 h-7 bg-surface border border-outline rounded px-1 text-center text-sm focus:ring-1 focus:ring-primary focus:outline-none" 
+                                    />
                                     <span class="text-xs text-outline">x {{ formatRupiah(item.price) }}</span>
                                 </div>
                                 <span class="text-sm font-bold text-primary">{{ formatRupiah(item.qty * item.price) }}</span>
@@ -459,7 +524,17 @@ const handleLogout = () => {
                         </div>
                         <div class="flex items-center justify-between gap-4 py-1">
                             <label class="text-label-md text-on-surface-variant whitespace-nowrap">Diskon (Rp)</label>
-                            <input v-model.number="discount" @keydown="preventInvalidNumberKeys" class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" placeholder="0" type="number" min="0"/>
+                            <input 
+                                v-model.number="discount" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeDiscount"
+                                class="w-32 h-8 bg-surface-container-low border border-outline-variant rounded px-2 text-right text-body-md focus:ring-1 focus:ring-primary focus:outline-none" 
+                                placeholder="0" 
+                                type="number" 
+                                min="0"
+                                step="1"
+                            />
                         </div>
                         <div class="flex justify-between items-center pt-3 mt-2 border-t-2 border-dashed border-outline-variant">
                             <span class="text-label-xl font-bold text-on-surface">TOTAL</span>
@@ -570,7 +645,16 @@ const handleLogout = () => {
                         <!-- Input uang tunai -->
                         <div v-if="selectedPaymentMethod === 'tunai'" class="space-y-2">
                             <label class="text-label-md text-on-surface-variant">Uang Tunai Diterima (Rp)</label>
-                            <input v-model.number="cashInput" type="number" min="0" class="w-full h-10 bg-surface border border-outline-variant rounded px-3 text-right text-body-md font-bold focus:ring-1 focus:ring-primary focus:outline-none" />
+                            <input 
+                                v-model.number="cashInput" 
+                                @keydown="preventInvalidNumberKeys" 
+                                @paste="preventInvalidNumberPaste"
+                                @blur="normalizeCashInput"
+                                type="number" 
+                                min="0" 
+                                step="1"
+                                class="w-full h-10 bg-surface border border-outline-variant rounded px-3 text-right text-body-md font-bold focus:ring-1 focus:ring-primary focus:outline-none" 
+                            />
                             <div v-if="cashInput >= totalAmount" class="flex justify-between text-sm font-bold text-green-600">
                                 <span>Kembalian:</span>
                                 <span>{{ formatRupiah(kembalian) }}</span>
