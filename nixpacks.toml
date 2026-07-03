@@ -1,23 +1,4 @@
-# Nixpacks configuration for Laravel + Vue/Vite on Railway
-[providers]
-providers = ['php', 'node']
-
-[phases.setup]
-nixPkgs = ['php83', 'nodejs_20', 'git']
-
-[phases.build]
-cmds = [
-    'composer install --no-dev --optimize-autoloader --no-interaction',
-    'npm ci',
-    'npm run build'
-]
-
-[phases.postbuild]
-cmds = [
-    'php artisan config:cache',
-    'php artisan route:cache',
-    'php artisan view:cache'
-]
-
+# Minimal Nixpacks configuration to run migrations before start
+# Let Nixpacks auto-detect packages (PHP/Node) and build steps automatically
 [start]
-cmd = 'php artisan migrate --force && php-fpm -D && nginx -g "daemon off;"'
+cmd = "php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"
