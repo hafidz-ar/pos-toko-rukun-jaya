@@ -143,9 +143,11 @@ class SalesHistorySeeder extends Seeder
                 $maxDiscount = $subtotal - $totalCostPrice;
                 if ($maxDiscount > 5000) {
                     $allowedMax = min($maxDiscount * 0.5, 50000);
-                    $discountSteps = range(5000, $allowedMax, 5000);
-                    if (!empty($discountSteps)) {
-                        $discount = (float) $discountSteps[array_rand($discountSteps)];
+                    if ($allowedMax >= 5000) {
+                        $discountSteps = range(5000, $allowedMax, 5000);
+                        if (!empty($discountSteps)) {
+                            $discount = (float) $discountSteps[array_rand($discountSteps)];
+                        }
                     }
                 }
             }
