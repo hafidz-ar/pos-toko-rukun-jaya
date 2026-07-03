@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -40,6 +40,52 @@ const form = ref({
 
 const selectedProduct = computed(() => {
     return props.products.find(p => p.id === form.value.product_id);
+});
+
+// Dropdown state for searchable select
+const isDropdownOpen = ref(false);
+const searchQuery = ref('');
+
+const filteredProducts = computed(() => {
+    if (!searchQuery.value) return props.products;
+    const query = searchQuery.value.toLowerCase();
+    return props.products.filter(product => {
+        const sku = 'sku-' + product.id.toString().padStart(4, '0');
+        return product.name.toLowerCase().includes(query) ||
+            (product.location && product.location.toLowerCase().includes(query)) ||
+            sku.includes(query);
+    });
+});
+
+const selectProduct = (product) => {
+    form.value.product_id = product.id;
+    searchQuery.value = product.name;
+    isDropdownOpen.value = false;
+    handleProductChange();
+};
+
+const handleInputFocus = () => {
+    isDropdownOpen.value = true;
+};
+
+const closeDropdown = () => {
+    isDropdownOpen.value = false;
+    if (selectedProduct.value) {
+        searchQuery.value = selectedProduct.value.name;
+    } else {
+        searchQuery.value = '';
+    }
+};
+
+watch(() => form.value.product_id, (newVal) => {
+    if (!newVal) {
+        searchQuery.value = '';
+    } else {
+        const prod = props.products.find(p => p.id === newVal);
+        if (prod) {
+            searchQuery.value = prod.name;
+        }
+    }
 });
 
 const availableUnits = computed(() => {
@@ -318,14 +364,64 @@ const formatRupiah = (number) => {
                         </h3>
 
                         <form @submit.prevent="submitRestock" class="space-y-4">
-                            <div>
+                            <div class="relative" :class="{ 'z-40': isDropdownOpen }">
                                 <label class="block text-sm font-semibold text-on-surface mb-1">Produk <span class="text-error">*</span></label>
-                                <select v-model="form.product_id" @change="handleProductChange" class="w-full bg-surface border border-outline rounded-lg px-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required>
-                                    <option value="" disabled>Pilih Produk</option>
-                                    <option v-for="product in products" :key="product.id" :value="product.id">
-                                        {{ product.name }} (Stok: {{ product.stock_qty_base_unit }} {{ product.base_unit }})
-                                    </option>
-                                </select>
+                                
+                                <!-- Input Trigger -->
+                                <div class="relative">
+                                    <input 
+                                        type="text" 
+                                        v-model="searchQuery" 
+                                        @focus="handleInputFocus"
+                                        @keydown.enter.prevent
+                                        @keydown.esc="closeDropdown"
+                                        placeholder="Ketik untuk mencari produk..." 
+                                        class="w-full bg-surface border border-outline rounded-lg pl-4 pr-10 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        required
+                                    />
+                                    <span 
+                                        class="absolute right-3 top-2.5 material-symbols-outlined text-on-surface-variant pointer-events-none transition-transform duration-200" 
+                                        :class="{ 'rotate-180': isDropdownOpen }"
+                                    >
+                                        arrow_drop_down
+                                    </span>
+                                </div>
+
+                                <!-- Backdrop overlay to handle click outside -->
+                                <div 
+                                    v-if="isDropdownOpen" 
+                                    class="fixed inset-0 z-30" 
+                                    @click="closeDropdown"
+                                ></div>
+
+                                <!-- Dropdown List -->
+                                <div 
+                                    v-if="isDropdownOpen" 
+                                    class="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-surface border border-outline rounded-lg shadow-lg z-40 custom-scrollbar"
+                                >
+                                    <ul class="py-1">
+                                        <li 
+                                            v-if="filteredProducts.length === 0" 
+                                            class="px-4 py-2 text-sm text-secondary"
+                                        >
+                                            Produk tidak ditemukan
+                                        </li>
+                                        <li 
+                                            v-for="product in filteredProducts" 
+                                            :key="product.id" 
+                                            @click="selectProduct(product)"
+                                            :class="[
+                                                'px-4 py-2 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex justify-between items-center',
+                                                form.product_id === product.id ? 'bg-primary/20 text-primary font-semibold' : 'text-on-surface'
+                                            ]"
+                                        >
+                                            <span>{{ product.name }}</span>
+                                            <span class="text-xs text-secondary font-normal">
+                                                Stok: {{ product.stock_qty_base_unit }} {{ product.base_unit }}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
