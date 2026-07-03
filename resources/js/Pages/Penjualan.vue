@@ -391,13 +391,12 @@ const formatDateLabel = (dateStr) => {
                                 Atur Ulang
                             </button>
                         </div>
-                        <div class="hidden md:block w-px h-6 bg-outline-variant"></div>
                         <div class="w-full md:w-auto">
                             <button 
                                 type="button"
                                 @click="exportExcel" 
                                 :disabled="isExporting"
-                                class="w-full md:w-auto h-10 border border-emerald-600 bg-emerald-600 px-6 rounded font-bold text-white hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                                class="w-full md:w-auto h-10 bg-primary text-on-primary px-6 rounded font-bold hover:brightness-90 active:translate-y-[1px] transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                             >
                                 <span class="material-symbols-outlined text-sm" v-if="!isExporting">download</span>
                                 <span class="material-symbols-outlined text-sm animate-spin" v-else>progress_activity</span>

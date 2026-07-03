@@ -69,7 +69,7 @@ class SalesHistoryExport implements FromQuery, WithCustomStartCell, WithHeadings
 
         return [
             $this->rowNumber,
-            $transaction->transaction_code,
+            'TX-' . str_pad($transaction->id, 6, '0', STR_PAD_LEFT),
             $transaction->transaction_datetime ? $transaction->transaction_datetime->format('d/m/Y') : '-',
             $transaction->transaction_datetime ? $transaction->transaction_datetime->format('H:i') . ' WIB' : '-',
             $itemsSummary,
