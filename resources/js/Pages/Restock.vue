@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '../Components/Pagination.vue';
+import BaseSelect from '../Components/BaseSelect.vue';
 
 const props = defineProps({
     products: Array,
@@ -376,11 +378,11 @@ const formatRupiah = (number) => {
                                         @keydown.enter.prevent
                                         @keydown.esc="closeDropdown"
                                         placeholder="Ketik untuk mencari produk..." 
-                                        class="w-full bg-surface border border-outline rounded-lg pl-4 pr-10 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        class="w-full bg-surface border border-outline rounded-lg pl-4 pr-12 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                         required
                                     />
                                     <span 
-                                        class="absolute right-3 top-2.5 material-symbols-outlined text-on-surface-variant pointer-events-none transition-transform duration-200" 
+                                        class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant pointer-events-none transition-transform duration-200" 
                                         :class="{ 'rotate-180': isDropdownOpen }"
                                     >
                                         arrow_drop_down
@@ -431,12 +433,12 @@ const formatRupiah = (number) => {
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-on-surface mb-1">Satuan <span class="text-error">*</span></label>
-                                    <select v-model="form.unit_name" class="w-full bg-surface border border-outline rounded-lg px-4 py-2 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" required :disabled="!form.product_id">
+                                    <BaseSelect v-model="form.unit_name" :disabled="!form.product_id" required>
                                         <option value="" disabled>Pilih Satuan</option>
                                         <option v-for="unit in availableUnits" :key="unit.unit_name" :value="unit.unit_name">
                                             {{ unit.unit_name }}
                                         </option>
-                                    </select>
+                                    </BaseSelect>
                                 </div>
                             </div>
 
@@ -511,47 +513,19 @@ const formatRupiah = (number) => {
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2">
                                     <label for="restocks-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
-                                    <select id="restocks-per-page" v-model="perPage" @change="applyPerPage" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                    <BaseSelect id="restocks-per-page" v-model="perPage" @change="applyPerPage" size="small" class="w-20">
                                         <option :value="5">5</option>
                                         <option :value="10">10</option>
                                         <option :value="20">20</option>
                                         <option :value="50">50</option>
-                                    </select>
+                                    </BaseSelect>
                                     <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
                                 </div>
                                 <p class="text-label-md font-label-md text-secondary">
                                     Menampilkan {{ restocks.from || 0 }}–{{ restocks.to || 0 }} dari {{ restocks.total || 0 }} data
                                 </p>
                             </div>
-                            <div class="flex gap-1">
-                                <button
-                                    @click="router.get(restocks.prev_page_url, { per_page: perPage }, { preserveState: false })"
-                                    :disabled="!restocks.prev_page_url"
-                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                    aria-label="Halaman Sebelumnya">
-                                    <span class="material-symbols-outlined">chevron_left</span>
-                                </button>
-                                <template v-for="link in restocks.links" :key="link.label">
-                                <button
-                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
-                                        @click="router.get(link.url, { per_page: perPage }, { preserveState: false })"
-                                        :class="[
-                                            'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
-                                            link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
-                                        ]"
-                                        :disabled="!link.url"
-                                        :aria-label="'Halaman ' + link.label">
-                                        {{ link.label }}
-                                    </button>
-                                </template>
-                                <button
-                                    @click="router.get(restocks.next_page_url, { per_page: perPage }, { preserveState: false })"
-                                    :disabled="!restocks.next_page_url"
-                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                    aria-label="Halaman Berikutnya">
-                                    <span class="material-symbols-outlined">chevron_right</span>
-                                </button>
-                            </div>
+                            <Pagination :links="restocks.links" />
                         </div>
                     </div>
                 </div>

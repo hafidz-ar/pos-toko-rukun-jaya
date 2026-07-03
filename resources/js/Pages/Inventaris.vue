@@ -1,6 +1,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '../Components/Pagination.vue';
+import BaseSelect from '../Components/BaseSelect.vue';
 
 const props = defineProps({
     auth: Object,
@@ -374,12 +376,12 @@ const closeMovements = () => {
                         <label class="text-xs font-bold text-secondary uppercase">Cari Produk</label>
                         <input v-model="search" @keyup.enter="applyFilter" type="text" placeholder="Nama, lokasi, atau kategori..." class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none" />
                     </div>
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-1 w-full md:w-60">
                         <label class="text-xs font-bold text-secondary uppercase">Kategori</label>
-                        <select v-model="categoryId" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                        <BaseSelect v-model="categoryId" size="small" class="w-full">
                             <option value="">Semua Kategori</option>
                             <option v-for="cat in props.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                        </select>
+                        </BaseSelect>
                     </div>
                     <div class="flex items-end gap-2">
                         <label class="flex items-center gap-2 h-10 cursor-pointer">
@@ -517,47 +519,19 @@ const closeMovements = () => {
                         <div class="flex items-center gap-4">
                             <div class="flex items-center gap-2">
                                 <label for="per-page-select" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
-                                <select id="per-page-select" v-model="perPage" @change="applyFilter" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                <BaseSelect id="per-page-select" v-model="perPage" @change="applyFilter" size="small" class="w-20">
                                     <option :value="5">5</option>
                                     <option :value="10">10</option>
                                     <option :value="20">20</option>
                                     <option :value="50">50</option>
-                                </select>
+                                </BaseSelect>
                                 <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
                             </div>
                             <p class="text-label-md font-label-md text-secondary">
                                 Menampilkan {{ props.products.from || 0 }}–{{ props.products.to || 0 }} dari {{ props.products.total || 0 }} data
                             </p>
                         </div>
-                        <div class="flex gap-1">
-                            <button
-                                @click="router.get(props.products.prev_page_url, { per_page: perPage }, { preserveState: false })"
-                                :disabled="!props.products.prev_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                aria-label="Halaman Sebelumnya">
-                                <span class="material-symbols-outlined">chevron_left</span>
-                            </button>
-                            <template v-for="link in props.products.links" :key="link.label">
-                                <button
-                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
-                                    @click="router.get(link.url, { per_page: perPage }, { preserveState: false })"
-                                    :class="[
-                                        'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
-                                        link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
-                                    ]"
-                                    :disabled="!link.url"
-                                    :aria-label="'Halaman ' + link.label">
-                                    {{ link.label }}
-                                </button>
-                            </template>
-                            <button
-                                @click="router.get(props.products.next_page_url, { per_page: perPage }, { preserveState: false })"
-                                :disabled="!props.products.next_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                aria-label="Halaman Berikutnya">
-                                <span class="material-symbols-outlined">chevron_right</span>
-                            </button>
-                        </div>
+                        <Pagination :links="props.products.links" />
                     </div>
                 </div>
             </div>
@@ -585,20 +559,18 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Kategori *</label>
-                            <select v-model="addForm.category_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <BaseSelect v-model="addForm.category_id" :error="addErrors.category_id" required>
                                 <option value="">Pilih Kategori</option>
                                 <option v-for="cat in props.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                            </select>
-                            <p v-if="addErrors.category_id" class="text-error text-xs mt-1">{{ addErrors.category_id }}</p>
+                            </BaseSelect>
                         </div>
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <select v-model="addForm.base_unit_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <BaseSelect v-model="addForm.base_unit_id" :error="addErrors.base_unit_id" required>
                                 <option value="">Pilih Satuan</option>
                                 <option v-for="unit in props.units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
-                            </select>
-                            <p v-if="addErrors.base_unit_id" class="text-error text-xs mt-1">{{ addErrors.base_unit_id }}</p>
+                            </BaseSelect>
                         </div>
 
                         <div>
@@ -650,10 +622,10 @@ const closeMovements = () => {
                             <div v-for="(unit, i) in addForm.units" :key="i" class="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-center border border-outline-variant p-3 rounded bg-surface-container-lowest">
                                 <div class="flex-1 min-w-[120px]">
                                     <label class="block text-xs font-bold text-secondary mb-1">Satuan Jual</label>
-                                    <select v-model="unit.unit_id" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" required>
+                                    <BaseSelect v-model="unit.unit_id" size="small" required>
                                         <option value="">Pilih Satuan</option>
                                         <option v-for="u in props.units" :key="u.id" :value="u.id" :disabled="u.id === addForm.base_unit_id || addForm.units.some((x, idx) => idx !== i && x.unit_id === u.id)">{{ u.name }}</option>
-                                    </select>
+                                    </BaseSelect>
                                 </div>
                                 <div class="w-24 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>
@@ -710,18 +682,18 @@ const closeMovements = () => {
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Kategori *</label>
-                            <select v-model="editForm.category_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <BaseSelect v-model="editForm.category_id" :error="editErrors.category_id" required>
                                 <option value="">Pilih Kategori</option>
                                 <option v-for="cat in props.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                            </select>
+                            </BaseSelect>
                         </div>
                         
                         <div>
                             <label class="block text-label-md font-bold text-secondary mb-2">Satuan Dasar *</label>
-                            <select v-model="editForm.base_unit_id" class="w-full p-3 border-2 border-outline-variant bg-white rounded focus:ring-0 focus:border-primary" required>
+                            <BaseSelect v-model="editForm.base_unit_id" :error="editErrors.base_unit_id" required>
                                 <option value="">Pilih Satuan</option>
                                 <option v-for="unit in props.units" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
-                            </select>
+                            </BaseSelect>
                         </div>
 
                         <div>
@@ -768,10 +740,10 @@ const closeMovements = () => {
                             <div v-for="(unit, i) in editForm.units" :key="i" class="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-center border border-outline-variant p-3 rounded bg-surface-container-lowest">
                                 <div class="flex-1 min-w-[120px]">
                                     <label class="block text-xs font-bold text-secondary mb-1">Satuan Jual</label>
-                                    <select v-model="unit.unit_id" class="w-full p-2 border border-outline-variant bg-white rounded text-sm focus:ring-0" required>
+                                    <BaseSelect v-model="unit.unit_id" size="small" required>
                                         <option value="">Pilih Satuan</option>
                                         <option v-for="u in props.units" :key="u.id" :value="u.id" :disabled="u.id === editForm.base_unit_id || editForm.units.some((x, idx) => idx !== i && x.unit_id === u.id)">{{ u.name }}</option>
-                                    </select>
+                                    </BaseSelect>
                                 </div>
                                 <div class="w-24 shrink-0">
                                     <label class="block text-xs font-bold text-secondary mb-1">Faktor</label>

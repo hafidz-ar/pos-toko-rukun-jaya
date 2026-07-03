@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import BaseSelect from '../Components/BaseSelect.vue';
 
 const props = defineProps({
     products: Array,
@@ -379,12 +380,11 @@ const handleLogout = () => {
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
                             <input v-model="searchQuery" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all" placeholder="Cari berdasarkan nama, lokasi, atau SKU..." type="text"/>
                         </div>
-                        <div class="relative shrink-0 w-52">
-                            <select v-model="selectedCategory" class="w-full h-12 bg-surface-container-lowest border border-outline-variant rounded-lg px-4 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none cursor-pointer">
+                        <div class="shrink-0 w-52">
+                            <BaseSelect v-model="selectedCategory">
                                 <option value="">Semua Kategori</option>
                                 <option v-for="cat in props.categories" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
-                            </select>
-                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+                            </BaseSelect>
                         </div>
                     </div>
                     

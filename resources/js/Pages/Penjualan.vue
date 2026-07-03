@@ -2,6 +2,8 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import TransactionDetailModal from '../Components/TransactionDetailModal.vue';
+import Pagination from '../Components/Pagination.vue';
+import BaseSelect from '../Components/BaseSelect.vue';
 
 const props = defineProps({
     auth: Object,
@@ -308,21 +310,21 @@ const formatDateLabel = (dateStr) => {
 
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Metode Pembayaran</label>
-                            <select v-model="paymentMethod" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                            <BaseSelect v-model="paymentMethod" size="small" class="w-full">
                                 <option value="semua">Semua Pembayaran</option>
                                 <option value="tunai">Tunai</option>
                                 <option value="qris">QRIS</option>
-                            </select>
+                            </BaseSelect>
                         </div>
 
                         <div v-if="props.auth?.user?.role === 'owner'" class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Kasir</label>
-                            <select v-model="cashierId" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                            <BaseSelect v-model="cashierId" size="small" class="w-full">
                                 <option value="">Semua Kasir</option>
                                 <option v-for="cashier in props.cashiers" :key="cashier.id" :value="cashier.id">
                                     {{ cashier.name }} ({{ cashier.username }})
                                 </option>
-                            </select>
+                            </BaseSelect>
                         </div>
                     </div>
 
@@ -340,12 +342,12 @@ const formatDateLabel = (dateStr) => {
 
                         <div class="flex flex-col gap-1">
                             <label class="text-xs font-bold text-secondary uppercase">Urutkan</label>
-                            <select v-model="sort" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                            <BaseSelect v-model="sort" size="small" class="w-full">
                                 <option value="terbaru">Transaksi Terbaru</option>
                                 <option value="terlama">Transaksi Terlama</option>
                                 <option value="harga_tertinggi">Total Harga Tertinggi</option>
                                 <option value="harga_terendah">Total Harga Terendah</option>
-                            </select>
+                            </BaseSelect>
                         </div>
                     </div>
 
@@ -478,47 +480,19 @@ const formatDateLabel = (dateStr) => {
                         <div class="flex items-center gap-4">
                             <div class="flex items-center gap-2">
                                 <label for="transactions-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
-                                <select id="transactions-per-page" v-model="perPage" @change="applyFilter" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                <BaseSelect id="transactions-per-page" v-model="perPage" @change="applyFilter" size="small" class="w-20">
                                     <option :value="5">5</option>
                                     <option :value="10">10</option>
                                     <option :value="20">20</option>
                                     <option :value="50">50</option>
-                                </select>
+                                </BaseSelect>
                                 <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
                             </div>
                             <p class="text-label-md font-label-md text-secondary">
                                 Menampilkan {{ props.transactions.from || 0 }}–{{ props.transactions.to || 0 }} dari {{ props.transactions.total || 0 }} transaksi
                             </p>
                         </div>
-                        <div class="flex gap-1">
-                            <button
-                                @click="goToPage(props.transactions.prev_page_url)"
-                                :disabled="!props.transactions.prev_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                aria-label="Halaman Sebelumnya">
-                                <span class="material-symbols-outlined">chevron_left</span>
-                            </button>
-                            <template v-for="link in props.transactions.links" :key="link.label">
-                                <button
-                                    v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
-                                    @click="goToPage(link.url)"
-                                    :class="[
-                                        'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
-                                        link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
-                                    ]"
-                                    :disabled="!link.url"
-                                    :aria-label="'Halaman ' + link.label">
-                                    {{ link.label }}
-                                </button>
-                            </template>
-                            <button
-                                @click="goToPage(props.transactions.next_page_url)"
-                                :disabled="!props.transactions.next_page_url"
-                                class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                aria-label="Halaman Berikutnya">
-                                <span class="material-symbols-outlined">chevron_right</span>
-                            </button>
-                        </div>
+                        <Pagination :links="props.transactions.links" />
                     </div>
                 </div>
             </div>

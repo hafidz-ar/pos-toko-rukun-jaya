@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import Pagination from '../Components/Pagination.vue';
+import BaseSelect from '../Components/BaseSelect.vue';
 
 const props = defineProps({
     auth: Object,
@@ -367,12 +369,12 @@ const exportPdf = () => {
                                 <button @click="setPreset('pilih_bulan')" :class="selectedPreset === 'pilih_bulan' ? 'bg-secondary-container text-on-secondary-container border border-secondary' : 'bg-surface border border-outline hover:bg-surface-container-high'" class="px-4 py-1.5 font-semibold rounded text-sm transition-colors">Pilih Bulan & Tahun</button>
                             </div>
                             <div v-if="selectedPreset === 'pilih_bulan'" class="flex items-center gap-2">
-                                <select v-model="selectedMonth" class="h-10 bg-surface border border-outline-variant rounded px-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                                <BaseSelect v-model="selectedMonth" size="small" class="w-32">
                                     <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
-                                </select>
-                                <select v-model="selectedYear" class="h-10 bg-surface border border-outline-variant rounded px-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                                </BaseSelect>
+                                <BaseSelect v-model="selectedYear" size="small" class="w-24">
                                     <option v-for="y in getAvailableYears()" :key="y" :value="y">{{ y }}</option>
-                                </select>
+                                </BaseSelect>
                             </div>
                         </template>
 
@@ -384,9 +386,9 @@ const exportPdf = () => {
                                 <button @click="setPreset('pilih_tahun')" :class="selectedPreset === 'pilih_tahun' ? 'bg-secondary-container text-on-secondary-container border border-secondary' : 'bg-surface border border-outline hover:bg-surface-container-high'" class="px-4 py-1.5 font-semibold rounded text-sm transition-colors">Pilih Tahun</button>
                             </div>
                             <div v-if="selectedPreset === 'pilih_tahun'" class="flex items-center gap-2">
-                                <select v-model="selectedYear" class="h-10 bg-surface border border-outline-variant rounded px-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                                <BaseSelect v-model="selectedYear" size="small" class="w-28">
                                     <option v-for="y in getAvailableYears()" :key="y" :value="y">{{ y }}</option>
-                                </select>
+                                </BaseSelect>
                             </div>
                         </template>
 
@@ -608,47 +610,19 @@ const exportPdf = () => {
                             <div class="flex items-center gap-4">
                                 <div class="flex items-center gap-2">
                                     <label for="products-per-page" class="text-label-md font-label-md text-secondary whitespace-nowrap">Tampilkan</label>
-                                    <select id="products-per-page" v-model="perPage" @change="applyPerPage" class="h-10 bg-surface border border-outline-variant rounded px-2 text-body-md focus:ring-1 focus:ring-primary focus:outline-none">
+                                    <BaseSelect id="products-per-page" v-model="perPage" @change="applyPerPage" size="small" class="w-20">
                                         <option :value="5">5</option>
                                         <option :value="10">10</option>
                                         <option :value="20">20</option>
                                         <option :value="50">50</option>
-                                    </select>
+                                    </BaseSelect>
                                     <span class="text-label-md font-label-md text-secondary whitespace-nowrap">data per halaman</span>
                                 </div>
                                 <p class="text-label-md font-label-md text-secondary">
                                     Menampilkan {{ props.labaPerProduk.from || 0 }}–{{ props.labaPerProduk.to || 0 }} dari {{ props.labaPerProduk.total || 0 }} data
                                 </p>
                             </div>
-                            <div class="flex gap-1">
-                                <button
-                                    @click="router.get(props.labaPerProduk.prev_page_url, {}, { preserveState: false })"
-                                    :disabled="!props.labaPerProduk.prev_page_url"
-                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                    aria-label="Halaman Sebelumnya">
-                                    <span class="material-symbols-outlined">chevron_left</span>
-                                </button>
-                                <template v-for="link in props.labaPerProduk.links" :key="link.label">
-                                    <button
-                                        v-if="link.label && !String(link.label).includes('Previous') && !String(link.label).includes('Next')"
-                                        @click="router.get(link.url, {}, { preserveState: false })"
-                                        :class="[
-                                            'w-10 h-10 flex items-center justify-center rounded font-bold text-sm transition-colors',
-                                            link.active ? 'bg-primary text-on-primary' : 'border border-outline hover:bg-surface-container-high text-secondary'
-                                        ]"
-                                        :disabled="!link.url"
-                                        :aria-label="'Halaman ' + link.label">
-                                        {{ link.label }}
-                                    </button>
-                                </template>
-                                <button
-                                    @click="router.get(props.labaPerProduk.next_page_url, {}, { preserveState: false })"
-                                    :disabled="!props.labaPerProduk.next_page_url"
-                                    class="w-10 h-10 flex items-center justify-center rounded border border-outline hover:bg-surface-container-high transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                    aria-label="Halaman Berikutnya">
-                                    <span class="material-symbols-outlined">chevron_right</span>
-                                </button>
-                            </div>
+                            <Pagination :links="props.labaPerProduk.links" />
                         </div>
                     </div>
                     
