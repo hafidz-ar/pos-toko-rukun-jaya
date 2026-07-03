@@ -1,16 +1,23 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import TransactionDetailModal from '../Components/TransactionDetailModal.vue';
 
 const props = defineProps({
     auth: Object,
     period: String,
+    chartPeriod: String,
+    todayCount: Number,
+    todayOmset: Number,
     totalOmset: Number,
     jumlahTransaksi: Number,
     totalLabaKotor: Number,
     labaPerProduk: Array,
     labaPerKategori: Array,
-    stokKritis: Array,
+    criticalStockCount: Number,
+    lowStockCount: Number,
+    outOfStockCount: Number,
+    criticalProducts: Array,
     transaksiMerugi: Number,
     chartData: Array,
     riwayatHariIni: Array,
@@ -41,9 +48,12 @@ const chartPoints = computed(() => {
     return data.map((d, index) => {
         return {
             day: d.day,
+            label: d.label,
             date: d.date,
             amount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(d.amount),
             rawAmount: d.amount,
+            count: d.count,
+            full_date: d.full_date,
             x: (index / Math.max(1, data.length - 1)) * 700,
             y: 200 - ((d.amount / maxAmount) * 200) // 200 max y down (Rp 0), 0 min y up (Rp max)
         };
@@ -78,6 +88,73 @@ const selectPoint = (point) => {
 
 const clearPoint = () => {
     hoveredPoint.value = null;
+};
+
+// Adaptive Tooltip boundary logic
+const getTooltipStyle = (idx, total) => {
+    const fraction = idx / Math.max(1, total - 1);
+    if (fraction < 0.25) {
+        return { left: '12px', transform: 'none' };
+    } else if (fraction > 0.75) {
+        return { right: '12px', left: 'auto', transform: 'none' };
+    } else {
+        return { left: '50%', transform: 'translateX(-50%)' };
+    }
+};
+
+// Chart Period changing via Inertia partial reload
+const chartPeriodRef = ref(props.chartPeriod || '7_hari');
+const isChartLoading = ref(false);
+
+const changeChartPeriod = (period) => {
+    chartPeriodRef.value = period;
+    isChartLoading.value = true;
+    router.get('/dashboard', {
+        period: props.period,
+        chart_period: period,
+    }, {
+        only: ['chartData', 'chartPeriod'],
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        onFinish: () => {
+            isChartLoading.value = false;
+        }
+    });
+};
+
+// Detail transaksi modal
+const showDetailModal = ref(false);
+const detailData = ref(null);
+const isLoadingDetail = ref(false);
+
+const openDetail = (txnId) => {
+    isLoadingDetail.value = true;
+    showDetailModal.value = true;
+    detailData.value = null;
+
+    fetch(`/penjualan/${txnId}`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        }
+    })
+        .then(r => r.json())
+        .then(data => {
+            detailData.value = data;
+        })
+        .catch(() => {
+            triggerToast('Gagal memuat detail transaksi.');
+            showDetailModal.value = false;
+        })
+        .finally(() => {
+            isLoadingDetail.value = false;
+        });
+};
+
+const closeDetail = () => {
+    showDetailModal.value = false;
+    detailData.value = null;
 };
 
 // Logout handler
@@ -273,7 +350,18 @@ const openOwnerMenu = (menuName, path) => {
                         </div>
                         <div>
                             <h3 class="text-headline-lg font-headline-lg text-on-background">KASIR / JUALAN</h3>
-                            <p class="text-body-lg font-body-lg text-secondary mt-2">Mulai transaksi penjualan baru untuk pelanggan toko.</p>
+                            <p class="text-body-lg font-body-lg text-secondary mt-1">Mulai transaksi penjualan baru.</p>
+                            <div class="mt-4 pt-3 border-t border-outline-variant/30 flex flex-wrap gap-4 text-xs font-semibold text-secondary">
+                                <div class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">receipt_long</span>
+                                    <span class="font-bold text-on-surface">{{ props.todayCount }}</span> Transaksi hari ini
+                                </div>
+                                <div class="w-px h-4 bg-outline-variant/40 hidden sm:block"></div>
+                                <div class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">payments</span>
+                                    <span>Omzet hari ini: <span class="font-bold text-primary">{{ formatRupiah(props.todayOmset) }}</span></span>
+                                </div>
+                            </div>
                         </div>
                         <!-- Subtle pattern for industrial feel -->
                         <div class="absolute right-0 bottom-0 opacity-[0.03] pointer-events-none">
@@ -281,7 +369,7 @@ const openOwnerMenu = (menuName, path) => {
                         </div>
                     </button>
                 </div>
-
+ 
                 <!-- CEK STOK -->
                 <div class="lg:col-span-4 lg:row-span-2 group">
                     <button 
@@ -293,11 +381,25 @@ const openOwnerMenu = (menuName, path) => {
                         </div>
                         <div>
                             <h3 class="text-headline-md font-headline-md text-on-background">CEK STOK</h3>
-                            <p class="text-body-md font-body-md text-secondary mt-2">Cari ketersediaan barang di gudang utama & cabang.</p>
+                            <p class="text-body-md font-body-md text-secondary mt-1">Cek ketersediaan produk.</p>
+                            <div class="mt-4 pt-3 border-t border-outline-variant/30 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-secondary">
+                                <div class="flex items-center gap-1 text-error" v-if="props.outOfStockCount > 0">
+                                    <span class="material-symbols-outlined text-[16px]">cancel</span>
+                                    <span><span class="font-bold">{{ props.outOfStockCount }}</span> Habis</span>
+                                </div>
+                                <div class="flex items-center gap-1 text-warning" v-if="props.lowStockCount > 0">
+                                    <span class="material-symbols-outlined text-[16px]">warning</span>
+                                    <span><span class="font-bold">{{ props.lowStockCount }}</span> Perlu Restok</span>
+                                </div>
+                                <div class="flex items-center gap-1 text-success" v-if="props.criticalStockCount === 0">
+                                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                    <span>Stok Aman</span>
+                                </div>
+                            </div>
                         </div>
                     </button>
                 </div>
-
+ 
                 <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-6 group">
                     <button 
                         @click="router.visit('/laporan')"
@@ -314,7 +416,7 @@ const openOwnerMenu = (menuName, path) => {
                         </div>
                     </button>
                 </div>
-
+ 
                 <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-6 group">
                     <button 
                         @click="router.visit('/pengaturan')"
@@ -331,201 +433,313 @@ const openOwnerMenu = (menuName, path) => {
                         </div>
                     </button>
                 </div>
-
+ 
                 <!-- Quick Stats Section -->
                 <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-12 mt-4">
-                    <div class="bg-surface-container p-6 rounded-xl border border-outline-variant flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                         
-                        <!-- Transaksi Hari Ini -->
-                        <div class="flex items-center gap-4 w-full md:w-auto">
-                            <div class="p-3 bg-secondary-container rounded-lg shrink-0">
-                                <span class="material-symbols-outlined text-on-secondary-container">assignment_turned_in</span>
+                        <!-- Transaksi Minggu Ini -->
+                        <div class="bg-surface-container p-5 rounded-xl border border-outline-variant flex items-center gap-4 shadow-sm hover:bg-surface-container-high transition-colors">
+                            <div class="p-3 bg-secondary-container rounded-lg shrink-0 text-on-secondary-container">
+                                <span class="material-symbols-outlined">assignment_turned_in</span>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Transaksi ({{ props.period }})</p>
-                                <p class="text-headline-md font-headline-md">{{ props.jumlahTransaksi }} Nota</p>
+                                <p class="text-[11px] font-bold text-secondary uppercase tracking-wider leading-none">Transaksi Minggu Ini</p>
+                                <p class="text-headline-md font-headline-md mt-1">{{ props.jumlahTransaksi }} Nota</p>
                             </div>
                         </div>
                         
-                        <div class="h-10 w-px bg-outline-variant hidden md:block"></div>
-                        
-                        <!-- Omset Berjalan -->
-                        <div class="flex items-center gap-4 w-full md:w-auto">
-                            <div class="p-3 bg-tertiary-fixed rounded-lg shrink-0">
-                                <span class="material-symbols-outlined text-on-tertiary-fixed-variant">trending_up</span>
+                        <!-- Omset Minggu Ini -->
+                        <div class="bg-surface-container p-5 rounded-xl border border-outline-variant flex items-center gap-4 shadow-sm hover:bg-surface-container-high transition-colors">
+                            <div class="p-3 bg-tertiary-fixed rounded-lg shrink-0 text-on-tertiary-fixed-variant">
+                                <span class="material-symbols-outlined">trending_up</span>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Omset ({{ props.period }})</p>
-                                <p class="text-headline-md font-headline-md">{{ formatRupiah(props.totalOmset) }}</p>
+                                <p class="text-[11px] font-bold text-secondary uppercase tracking-wider leading-none">Omset Minggu Ini</p>
+                                <p class="text-headline-md font-headline-md mt-1">{{ formatRupiah(props.totalOmset) }}</p>
                             </div>
                         </div>
                         
-                        <div class="h-10 w-px bg-outline-variant hidden md:block"></div>
+                        <!-- Laba Kotor Minggu Ini -->
+                        <div class="bg-surface-container p-5 rounded-xl border border-outline-variant flex items-center gap-4 shadow-sm hover:bg-surface-container-high transition-colors">
+                            <div class="p-3 bg-primary-container rounded-lg shrink-0 text-on-primary-container">
+                                <span class="material-symbols-outlined">payments</span>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-bold text-secondary uppercase tracking-wider leading-none">Laba Kotor Minggu Ini</p>
+                                <p class="text-headline-md font-headline-md mt-1">{{ formatRupiah(props.totalLabaKotor) }}</p>
+                            </div>
+                        </div>
                         
                         <!-- Stok Menipis -->
-                        <div class="flex items-center gap-4 w-full md:w-auto cursor-pointer hover:opacity-80" @click="router.visit('/inventaris')">
-                            <div class="p-3 bg-error-container rounded-lg shrink-0">
-                                <span class="material-symbols-outlined text-on-error-container">warning</span>
+                        <div class="bg-surface-container p-5 rounded-xl border border-outline-variant flex items-center gap-4 shadow-sm hover:bg-surface-container-high transition-colors cursor-pointer" @click="router.visit('/inventaris')">
+                            <div class="p-3 bg-error-container rounded-lg shrink-0 text-on-error-container">
+                                <span class="material-symbols-outlined">warning</span>
                             </div>
                             <div>
-                                <p class="text-xs text-secondary uppercase font-bold tracking-wider">Stok Menipis</p>
-                                <p class="text-headline-md font-headline-md text-error">{{ props.stokKritis?.length || 0 }} Item</p>
+                                <p class="text-[11px] font-bold text-secondary uppercase tracking-wider leading-none">Stok Menipis</p>
+                                <p class="text-headline-md font-headline-md text-error mt-1">{{ props.criticalStockCount }} Produk</p>
                             </div>
                         </div>
 
                     </div>
                 </div>
-
+ 
                 <!-- Sales Trend History Section (Interactive SVG) -->
                 <div v-if="props.auth?.user?.role === 'owner'" class="lg:col-span-12 mt-8">
                     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 relative">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-headline-md font-headline-md text-on-background">Tren Penjualan (7 Hari Terakhir)</h3>
-                            <div class="flex items-center gap-2">
-                                <span class="w-3 h-3 rounded-full bg-primary"></span>
-                                <span class="text-label-md text-secondary">Total Penjualan</span>
+                        <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                            <h3 class="text-headline-md font-headline-md text-on-background font-bold">Tren Penjualan</h3>
+                            
+                            <div class="flex items-center gap-4">
+                                <div class="flex bg-surface-container rounded-lg p-0.5 border border-outline-variant text-xs font-semibold">
+                                    <button 
+                                        @click="changeChartPeriod('7_hari')"
+                                        :class="[
+                                            'px-3 py-1.5 rounded-md transition-all cursor-pointer',
+                                            chartPeriodRef === '7_hari' ? 'bg-primary text-on-primary shadow font-bold' : 'text-secondary hover:text-on-surface'
+                                        ]"
+                                    >
+                                        7 Hari
+                                    </button>
+                                    <button 
+                                        @click="changeChartPeriod('30_hari')"
+                                        :class="[
+                                            'px-3 py-1.5 rounded-md transition-all cursor-pointer',
+                                            chartPeriodRef === '30_hari' ? 'bg-primary text-on-primary shadow font-bold' : 'text-secondary hover:text-on-surface'
+                                        ]"
+                                    >
+                                        30 Hari
+                                    </button>
+                                    <button 
+                                        @click="changeChartPeriod('bulan_ini')"
+                                        :class="[
+                                            'px-3 py-1.5 rounded-md transition-all cursor-pointer',
+                                            chartPeriodRef === 'bulan_ini' ? 'bg-primary text-on-primary shadow font-bold' : 'text-secondary hover:text-on-surface'
+                                        ]"
+                                    >
+                                        Bulan Ini
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
+ 
                         <!-- Chart with Y-Axis and SVG Area -->
-                        <div class="flex gap-4 h-64 w-full relative select-none">
-                            <!-- Y-axis Labels -->
-                            <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[80px] select-none">
-                                <span class="h-0 flex items-center justify-end">{{ chartMaxAmount }}</span>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                                <span class="h-0 flex items-center justify-end">Rp 0</span>
+                        <div class="relative w-full">
+                            
+                            <!-- Loading Overlay -->
+                            <div v-if="isChartLoading" class="absolute inset-0 bg-surface-container-lowest/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-secondary text-sm font-semibold gap-2">
+                                <span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                                <span>Memuat data tren...</span>
                             </div>
 
-                            <!-- SVG Chart Area -->
-                            <div class="relative flex-1 h-full">
-                                <!-- Grid Lines -->
-                                <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                                    <div class="border-b border-outline-variant opacity-20 w-full"></div>
-                                    <div class="border-b border-outline-variant opacity-20 w-full"></div>
-                                    <div class="border-b border-outline-variant opacity-20 w-full"></div>
-                                    <div class="border-b border-outline-variant opacity-20 w-full"></div>
-                                    <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                            <!-- Empty State: All Data Zero -->
+                            <div v-if="!isChartLoading && chartPoints.length === 0" class="flex flex-col items-center justify-center py-16 text-secondary text-center border-2 border-dashed border-outline-variant rounded-lg">
+                                <span class="material-symbols-outlined text-4xl mb-2 text-outline">query_stats</span>
+                                <p class="font-bold text-on-surface">Belum ada transaksi pada periode ini.</p>
+                                <p class="text-xs text-secondary mt-1">Mulai lakukan transaksi untuk melihat tren penjualan.</p>
+                            </div>
+
+                            <div v-else class="flex gap-4 h-64 w-full relative select-none">
+                                <!-- Y-axis Labels -->
+                                <div class="flex flex-col justify-between text-[10px] md:text-xs text-secondary font-semibold h-full pr-2 border-r border-outline-variant/30 text-right shrink-0 w-[80px] select-none">
+                                    <span class="h-0 flex items-center justify-end">{{ chartMaxAmount }}</span>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                    <span class="h-0 flex items-center justify-end">Rp 0</span>
                                 </div>
-
-                                <svg class="absolute inset-0 w-full h-full" style="overflow: visible;" preserveAspectRatio="none" viewBox="0 0 700 200">
-                                    <!-- Area Path with Gradient -->
-                                    <path v-if="chartPath" :d="chartPath + ' V200 H0 Z'" fill="url(#chartGradient)" opacity="0.1"></path>
-                                    <!-- Line Path -->
-                                    <path v-if="chartPath" :d="chartPath" fill="none" stroke="var(--color-primary)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
-                                    
-                                    <defs>
-                                        <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                                            <stop offset="0%" style="stop-color: var(--color-primary); stop-opacity: 1"></stop>
-                                            <stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 0"></stop>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-
-                                <!-- Hoverable Circles for Data Points -->
-                                <div class="absolute inset-0 pointer-events-none">
-                                    <div 
-                                        v-for="(point, idx) in chartPoints" 
-                                        :key="idx" 
-                                        class="absolute top-0 bottom-0 pointer-events-auto cursor-pointer flex flex-col items-center"
-                                        :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%`, width: '40px', transform: 'translateX(-20px)' }"
-                                        @mouseenter="selectPoint(point)"
-                                        @mouseleave="clearPoint"
-                                    >
-                                        <!-- Invisible handle to ease hover on mobile / desktop -->
-                                        <div class="w-full h-full"></div>
-
-                                        <!-- Interactive Tooltip -->
+ 
+                                <!-- SVG Chart Area -->
+                                <div class="relative flex-1 h-full">
+                                    <!-- Grid Lines -->
+                                    <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                                        <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                                        <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                                        <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                                        <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                                        <div class="border-b border-outline-variant opacity-20 w-full"></div>
+                                    </div>
+ 
+                                    <svg class="absolute inset-0 w-full h-full" style="overflow: visible;" preserveAspectRatio="none" viewBox="0 0 700 200">
+                                        <!-- Area Path with Gradient -->
+                                        <path v-if="chartPath" :d="chartPath + ' V200 H0 Z'" fill="url(#chartGradient)" opacity="0.1"></path>
+                                        <!-- Line Path -->
+                                        <path v-if="chartPath" :d="chartPath" fill="none" stroke="var(--color-primary)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+                                        
+                                        <defs>
+                                            <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+                                                <stop offset="0%" style="stop-color: var(--color-primary); stop-opacity: 1"></stop>
+                                                <stop offset="100%" style="stop-color: var(--color-primary); stop-opacity: 0"></stop>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+ 
+                                    <!-- Hoverable Circles for Data Points -->
+                                    <div class="absolute inset-0 pointer-events-none">
                                         <div 
-                                            v-if="hoveredPoint && hoveredPoint.day === point.day" 
-                                            class="absolute bg-inverse-surface text-inverse-on-surface px-3 py-1.5 rounded text-xs font-semibold shadow-md whitespace-nowrap z-20 pointer-events-none transition-all duration-155 left-1/2 -translate-x-1/2"
-                                            :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 45px)` }"
+                                            v-for="(point, idx) in chartPoints" 
+                                            :key="idx" 
+                                            class="absolute top-0 bottom-0 pointer-events-auto cursor-pointer flex flex-col items-center"
+                                            :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%`, width: '40px', transform: 'translateX(-20px)' }"
+                                            @mouseenter="selectPoint(point)"
+                                            @mouseleave="clearPoint"
                                         >
-                                            <div class="font-bold text-primary-fixed">{{ point.day }} ({{ point.date }}): {{ point.amount }}</div>
+                                            <!-- Invisible handle to ease hover on mobile / desktop -->
+                                            <div class="w-full h-full"></div>
+ 
+                                            <!-- Adaptive Tooltip -->
+                                            <div 
+                                                v-if="hoveredPoint && hoveredPoint.label === point.label" 
+                                                class="absolute bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-lg text-xs font-semibold shadow-md whitespace-nowrap z-20 pointer-events-none transition-all duration-155 text-left border border-outline animate-fade-in"
+                                                :style="[{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 75px)` }, getTooltipStyle(idx, chartPoints.length)]"
+                                            >
+                                                <p class="font-bold text-primary-fixed mb-1">{{ point.full_date }}</p>
+                                                <p class="leading-relaxed">Penjualan: <span class="font-bold text-on-primary-fixed">{{ point.amount }}</span></p>
+                                                <p class="leading-relaxed">Jumlah Transaksi: <span class="font-bold text-primary-fixed">{{ point.count }} Nota</span></p>
+                                            </div>
+ 
+                                            <!-- Small dot on line path -->
+                                            <div 
+                                                class="absolute w-3 h-3 rounded-full border-2 border-surface bg-primary transition-all duration-150 pointer-events-none left-1/2 -translate-x-1/2"
+                                                :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 6px)` }"
+                                                :class="{ 'scale-150 shadow-md ring-2 ring-primary-fixed': hoveredPoint && hoveredPoint.label === point.label }"
+                                            ></div>
                                         </div>
-
-                                        <!-- Small dot on line path -->
-                                        <div 
-                                            class="absolute w-3 h-3 rounded-full border-2 border-surface bg-primary transition-all duration-150 pointer-events-none left-1/2 -translate-x-1/2"
-                                            :style="{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 6px)` }"
-                                            :class="{ 'scale-150 shadow-md ring-2 ring-primary-fixed': hoveredPoint && hoveredPoint.day === point.day }"
-                                        ></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
+ 
                         <!-- Axis Labels -->
-                        <div class="flex gap-4 mt-8 text-xs text-secondary font-semibold pt-2 border-t border-outline-variant/30">
+                        <div v-if="chartPoints.length > 0" class="flex gap-4 mt-8 text-[10px] md:text-xs text-secondary font-semibold pt-2 border-t border-outline-variant/30">
                             <!-- Spacer to align with Y-axis -->
                             <div class="w-[80px] shrink-0 border-r border-transparent"></div>
                             <!-- X-axis Labels -->
                             <div class="flex-1 relative h-6">
                                 <span 
                                     v-for="(point, idx) in chartPoints" 
-                                    :key="point.day" 
-                                    class="absolute text-secondary font-semibold -translate-x-1/2"
+                                    :key="point.label" 
+                                    class="absolute text-secondary font-semibold -translate-x-1/2 whitespace-nowrap"
                                     :style="{ left: `${(idx * 100) / Math.max(1, chartPoints.length - 1)}%` }"
                                 >
                                     {{ point.day }}
                                 </span>
                             </div>
                         </div>
-
+ 
                         <!-- Mini Stats Summary -->
-                        <div class="mt-8 flex justify-around text-center border-t border-outline-variant pt-6">
+                        <div v-if="chartPoints.length > 0" class="mt-8 flex justify-around text-center border-t border-outline-variant pt-6">
                             <div>
                                 <p class="text-xs text-secondary uppercase font-bold">Tertinggi</p>
-                                <p class="text-label-xl text-primary">{{ chartMaxAmount }}</p>
+                                <p class="text-label-xl text-primary font-bold">{{ chartMaxAmount }}</p>
                             </div>
                             <div>
                                 <p class="text-xs text-secondary uppercase font-bold">Rata-rata Harian</p>
-                                <p class="text-label-xl text-on-background">{{ chartAvgAmount }}</p>
+                                <p class="text-label-xl text-on-background font-bold">{{ chartAvgAmount }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
-
+ 
                 <!-- Recent Sales Table Section -->
-                <div class="lg:col-span-12 mt-8">
+                <div class="lg:col-span-8 mt-8">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-headline-md font-headline-md text-on-background">Riwayat Penjualan Hari Ini</h3>
-                        <button @click="router.visit('/penjualan')" class="text-primary font-bold text-label-md hover:underline">Lihat Semua</button>
+                        <h3 class="text-headline-md font-headline-md text-on-background font-bold">Riwayat Penjualan Hari Ini</h3>
+                        <button @click="router.visit('/penjualan')" class="text-primary font-bold text-label-md hover:underline cursor-pointer">Lihat Semua</button>
                     </div>
                     
                     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[600px]">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr class="bg-surface-container border-b border-outline-variant text-label-md text-secondary">
                                     <th class="p-4 font-semibold">Waktu</th>
                                     <th class="p-4 font-semibold">Item Terjual</th>
                                     <th class="p-4 font-semibold">Total Harga</th>
-                                    <th class="p-4 font-semibold">Metode Pembayaran</th>
-                                    <th class="p-4 font-semibold">Status Diskon</th>
+                                    <th class="p-4 font-semibold">Pembayaran</th>
+                                    <th class="p-4 font-semibold">Kasir</th>
+                                    <th class="p-4 font-semibold text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="text-body-md text-on-background">
                                 <tr v-if="props.riwayatHariIni && props.riwayatHariIni.length === 0">
-                                    <td colspan="5" class="p-8 text-center text-secondary">Belum ada transaksi hari ini.</td>
+                                    <td colspan="6" class="p-8 text-center text-secondary">Belum ada transaksi hari ini.</td>
                                 </tr>
                                 <tr v-for="trx in props.riwayatHariIni" :key="trx.id" class="border-b border-outline-variant hover:bg-surface-container-low transition-colors">
                                     <td class="p-4 text-secondary">{{ trx.waktu }}</td>
-                                    <td class="p-4">{{ trx.items_summary }} ({{ trx.items_count }} item)</td>
-                                    <td class="p-4 font-bold">{{ formatRupiah(trx.total) }}</td>
+                                    <td class="p-4 text-sm">{{ trx.items_summary }} ({{ trx.items_count }} item)</td>
+                                    <td class="p-4 font-bold text-primary">{{ formatRupiah(trx.total) }}</td>
                                     <td class="p-4">
                                         <span :class="[
-                                            'px-2 py-1 rounded-md text-xs font-bold',
-                                            trx.payment_method === 'QRIS' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-surface-container-highest text-on-surface'
-                                        ]">{{ trx.payment_method }}</span>
+                                            'px-2.5 py-0.5 rounded text-[11px] font-bold uppercase',
+                                            trx.payment_method === 'qris' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant' : 'bg-surface-container-highest text-on-surface'
+                                        ]">{{ trx.payment_method?.toUpperCase() }}</span>
                                     </td>
-                                    <td class="p-4">
-                                        <span v-if="trx.discount > 0" class="text-primary font-bold text-label-md">-{{ formatRupiah(trx.discount) }}</span>
-                                        <span v-else class="text-secondary">-</span>
+                                    <td class="p-4 text-secondary text-sm">{{ trx.cashier }}</td>
+                                    <td class="p-4 text-center">
+                                        <button @click="openDetail(trx.id)" class="text-secondary hover:text-primary transition-colors cursor-pointer">
+                                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+ 
+                <!-- Perlu Perhatian Section -->
+                <div class="lg:col-span-4 mt-8 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-headline-md font-headline-md text-on-background font-bold">Perlu Perhatian</h3>
+                        <button @click="router.visit('/inventaris')" class="text-error font-bold text-label-md hover:underline cursor-pointer">Lihat Semua</button>
+                    </div>
+                    
+                    <div class="bg-surface-container p-6 rounded-xl border border-outline-variant flex-1 flex flex-col justify-between min-h-[300px]">
+                        <div class="space-y-4">
+                            <!-- All Stok Safe Empty State -->
+                            <div v-if="props.criticalProducts && props.criticalProducts.length === 0" class="text-sm text-secondary py-8 text-center flex flex-col items-center">
+                                <span class="material-symbols-outlined text-success text-5xl mb-2">check_circle</span>
+                                <p class="font-bold text-on-surface">✓ Semua stok dalam kondisi aman</p>
+                                <p class="text-xs text-secondary mt-1">Tidak ada produk yang perlu direstok saat ini.</p>
+                            </div>
+ 
+                            <div v-else class="space-y-3.5">
+                                <div v-for="item in props.criticalProducts" :key="item.id" class="flex items-start justify-between gap-3 text-sm border-b border-outline-variant/30 pb-3 last:border-0 last:pb-0">
+                                    <div class="flex items-start gap-2.5">
+                                        <span class="material-symbols-outlined text-error shrink-0 mt-0.5" style="font-size: 20px;">
+                                            {{ item.stock <= 0 ? 'cancel' : 'warning' }}
+                                        </span>
+                                        <div>
+                                            <p class="font-bold text-on-surface leading-tight hover:underline cursor-pointer" @click="router.visit('/inventaris', { search: item.name })">{{ item.name }}</p>
+                                            <p class="text-xs text-secondary mt-1">
+                                                Sisa: <span :class="item.stock <= 0 ? 'text-error font-bold' : 'text-on-surface font-semibold'">{{ item.stock }}</span> {{ item.base_unit }} 
+                                                dari minimum {{ item.threshold }} {{ item.base_unit }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span :class="[
+                                        'px-2 py-0.5 rounded text-[10px] font-bold shrink-0 uppercase',
+                                        item.stock <= 0 ? 'bg-error-container text-on-error-container border border-error/20' : 'bg-warning-container text-on-warning-container border border-warning/20'
+                                    ]">
+                                        {{ item.stock <= 0 ? 'HABIS' : 'MENIPIS' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+ 
+                        <!-- Footer navigasi / count info -->
+                        <div class="mt-6 pt-4 border-t border-outline-variant/40">
+                            <p class="text-xs text-secondary mb-3 text-center" v-if="props.criticalStockCount > 5">
+                                Menampilkan 5 dari <span class="font-bold text-error">{{ props.criticalStockCount }}</span> produk stok menipis
+                            </p>
+                            <button 
+                                @click="router.visit('/inventaris')" 
+                                class="w-full h-10 border border-outline-variant bg-surface-container-low hover:bg-surface-container-high rounded text-xs font-bold text-secondary transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                                <span class="material-symbols-outlined text-[16px]">inventory_2</span>
+                                <span>Lihat Semua Inventaris</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -579,6 +793,13 @@ const openOwnerMenu = (menuName, path) => {
                 <circle cx="50" cy="50" r="50"></circle>
             </svg>
         </div>
+
+        <!-- Shared Transaction Detail Modal -->
+        <TransactionDetailModal 
+            :show="showDetailModal" 
+            :transaction="detailData" 
+            @close="closeDetail" 
+        />
     </div>
 </template>
 

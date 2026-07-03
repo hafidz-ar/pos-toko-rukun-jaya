@@ -163,12 +163,7 @@ class SalesHistoryController extends Controller
      */
     public function show(Request $request, Transaction $transaction)
     {
-        $user = $request->user();
-
-        // Karyawan can only view own transactions
-        if ($user->isKaryawan() && $transaction->cashier_user_id !== $user->id) {
-            return response()->json(['message' => 'Akses ditolak.'], 403);
-        }
+        \Illuminate\Support\Facades\Gate::authorize('view', $transaction);
 
         $transaction->load(['cashier', 'items.product']);
 
