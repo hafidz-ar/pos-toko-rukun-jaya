@@ -10,55 +10,57 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 11px;
+            font-family: 'Inter', Arial, sans-serif;
+            font-size: 12px;
             color: #191c1e;
             line-height: 1.5;
-            padding: 20px 30px;
+            padding: 40px 50px;
+            background-color: #ffffff;
         }
         .header {
             text-align: center;
-            border-bottom: 3px solid #9e4300;
+            border-bottom: 3px double #9e4300;
             padding-bottom: 12px;
             margin-bottom: 20px;
         }
         .header h1 {
-            font-size: 20px;
+            font-size: 24px;
             color: #9e4300;
             margin-bottom: 2px;
+            font-weight: 700;
         }
         .header .store-name {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
             color: #333;
         }
         .header .period {
-            font-size: 12px;
-            color: #666;
-            margin-top: 4px;
+            font-size: 13px;
+            color: #555;
+            margin-top: 6px;
         }
         .header .generated {
-            font-size: 9px;
-            color: #999;
-            margin-top: 2px;
+            font-size: 10px;
+            color: #777;
+            margin-top: 4px;
         }
         .section {
-            margin-bottom: 18px;
+            margin-bottom: 24px;
         }
         .section-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: #9e4300;
-            border-bottom: 1px solid #e0c0b1;
-            padding-bottom: 4px;
-            margin-bottom: 8px;
+            border-bottom: 2px solid #e0c0b1;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
         }
         .summary-grid {
             width: 100%;
             border-collapse: collapse;
         }
         .summary-grid td {
-            padding: 6px 10px;
+            padding: 8px 12px;
             border: 1px solid #e0e3e5;
         }
         .summary-grid .label {
@@ -73,7 +75,7 @@
         }
         .summary-grid .value.highlight {
             color: #9e4300;
-            font-size: 13px;
+            font-size: 14px;
         }
         .summary-grid .value.danger {
             color: #ba1a1a;
@@ -84,14 +86,14 @@
         table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6px;
+            margin-top: 8px;
         }
         table.data-table thead th {
             background-color: #9e4300;
             color: #ffffff;
-            padding: 6px 8px;
+            padding: 8px 10px;
             text-align: left;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
         }
@@ -99,9 +101,9 @@
             text-align: right;
         }
         table.data-table tbody td {
-            padding: 5px 8px;
+            padding: 8px 10px;
             border-bottom: 1px solid #e0e3e5;
-            font-size: 10px;
+            font-size: 11px;
         }
         table.data-table tbody td.text-right {
             text-align: right;
@@ -110,39 +112,27 @@
             background-color: #f7f9fb;
         }
         table.data-table tfoot td {
-            padding: 6px 8px;
+            padding: 8px 10px;
             font-weight: 700;
             border-top: 2px solid #9e4300;
-            font-size: 11px;
+            font-size: 12px;
         }
         table.data-table tfoot td.text-right {
             text-align: right;
         }
-        .two-col {
-            width: 100%;
-        }
-        .two-col td {
-            width: 50%;
-            vertical-align: top;
-            padding-right: 10px;
-        }
-        .two-col td:last-child {
-            padding-right: 0;
-            padding-left: 10px;
-        }
         .footer {
-            margin-top: 24px;
+            margin-top: 40px;
             text-align: center;
-            font-size: 9px;
-            color: #999;
+            font-size: 10px;
+            color: #777;
             border-top: 1px solid #e0e3e5;
-            padding-top: 8px;
+            padding-top: 12px;
         }
         .badge {
             display: inline-block;
-            padding: 1px 6px;
-            border-radius: 3px;
-            font-size: 9px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
             font-weight: 600;
         }
         .badge-success {
@@ -153,6 +143,59 @@
             background-color: #fce4ec;
             color: #ba1a1a;
         }
+
+        /* Non-print controls */
+        .print-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            background-color: #f2f4f6;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #e0e3e5;
+        }
+        .btn {
+            padding: 8px 16px;
+            font-weight: bold;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            transition: all 150ms ease;
+        }
+        .btn-primary {
+            background-color: #9e4300;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #8e3c00;
+        }
+        .btn-secondary {
+            background-color: #545f73;
+            color: #ffffff;
+        }
+        .btn-secondary:hover {
+            background-color: #444f63;
+        }
+
+        @media print {
+            .print-controls {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+            }
+            tfoot {
+                display: table-row-group !important;
+            }
+            thead {
+                display: table-header-group !important;
+            }
+            tr {
+                page-break-inside: avoid !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -161,9 +204,9 @@
     <div class="header">
         <div class="store-name">Toko Rukun Jaya</div>
         <h1>Laporan Keuangan</h1>
-        <div class="period" style="margin-top: 4px;">Periode laporan: <strong>{{ $periodLabel }}</strong></div>
-        <div class="period" style="font-size: 10px; color: #555; margin-top: 2px;">Dibandingkan dengan: {{ $comparisonDateLabel }} ({{ $comparisonLabel }})</div>
-        <div class="generated" style="margin-top: 6px;">Dicetak: {{ $generatedAt }}</div>
+        <div class="period">Periode laporan: <strong>{{ $periodLabel }}</strong></div>
+        <div class="period" style="font-size: 11px; color: #555; margin-top: 3px;">Dibandingkan dengan: {{ $comparisonDateLabel }} ({{ $comparisonLabel }})</div>
+        <div class="generated">Dicetak: {{ $generatedAt }}</div>
     </div>
 
     {{-- ====== RINGKASAN ====== --}}
@@ -317,5 +360,22 @@
         Data bersumber dari transaksi yang tercatat di sistem. Laporan bersifat operasional, bukan pembukuan akuntansi lengkap.
     </div>
 
+    <script>
+        // Trigger print dialog automatically when loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        });
+
+        // Auto close tab or remove iframe after print dialog is closed (either printed or cancelled)
+        window.addEventListener('afterprint', () => {
+            if (window.self === window.top) {
+                window.close();
+            } else {
+                window.parent.document.getElementById('print-iframe')?.remove();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,11 +1,14 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     auth: Object,
     transactions: Object, // paginated
+    cashiers: Array, // kasir list
+    summary: Object, // metrik ringkasan
     filters: Object,
+    validationError: String,
     selectedTransaction: Object, // untuk detail modal
 });
 
@@ -30,7 +33,11 @@ const handleLogout = () => {
     }, 800);
 };
 
-// Filter tanggal & per page
+// Filter states
+const search = ref(props.filters?.search || '');
+const paymentMethod = ref(props.filters?.payment_method || 'semua');
+const cashierId = ref(props.filters?.cashier_id || '');
+const sort = ref(props.filters?.sort || 'terbaru');
 const dateFrom = ref(props.filters?.date_from || '');
 const dateTo = ref(props.filters?.date_to || '');
 const perPage = ref(parseInt(localStorage.getItem('pos_per_page_penjualan') || props.filters?.per_page || '10'));
@@ -38,17 +45,29 @@ const perPage = ref(parseInt(localStorage.getItem('pos_per_page_penjualan') || p
 const applyFilter = () => {
     localStorage.setItem('pos_per_page_penjualan', perPage.value.toString());
     router.get('/penjualan', {
+        search: search.value || undefined,
+        payment_method: paymentMethod.value || undefined,
+        cashier_id: cashierId.value || undefined,
+        sort: sort.value || undefined,
         date_from: dateFrom.value || undefined,
         date_to: dateTo.value || undefined,
         per_page: perPage.value || undefined,
+        // Reset page to 1 on filter application
+        page: undefined,
     }, { preserveState: false });
 };
 
 const resetFilter = () => {
+    search.value = '';
+    paymentMethod.value = 'semua';
+    cashierId.value = '';
+    sort.value = 'terbaru';
     dateFrom.value = '';
     dateTo.value = '';
     router.get('/penjualan', {
         per_page: perPage.value || undefined,
+        // Reset page to 1 on filter reset
+        page: undefined,
     }, { preserveState: false });
 };
 
@@ -56,6 +75,10 @@ onMounted(() => {
     const savedPerPage = localStorage.getItem('pos_per_page_penjualan');
     if (savedPerPage && !props.filters?.per_page) {
         router.get('/penjualan', {
+            search: search.value || undefined,
+            payment_method: paymentMethod.value || undefined,
+            cashier_id: cashierId.value || undefined,
+            sort: sort.value || undefined,
             date_from: dateFrom.value || undefined,
             date_to: dateTo.value || undefined,
             per_page: savedPerPage
@@ -105,6 +128,57 @@ const formatRupiah = (number) => {
 const goToPage = (url) => {
     if (!url) return;
     router.get(url, {}, { preserveState: false });
+};
+
+// Active filter labels formatting
+const activeFilterContext = computed(() => {
+    const parts = [];
+    
+    // 1. Tanggal
+    if (props.filters?.date_from && props.filters?.date_to) {
+        parts.push(`Rentang: ${formatDateLabel(props.filters.date_from)} s/d ${formatDateLabel(props.filters.date_to)}`);
+    }
+    
+    // 2. Pembayaran
+    if (props.filters?.payment_method && props.filters.payment_method !== 'semua') {
+        parts.push(`Pembayaran: ${props.filters.payment_method === 'qris' ? 'QRIS' : 'Tunai'}`);
+    }
+    
+    // 3. Kasir
+    if (props.filters?.cashier_id) {
+        const cashierObj = props.cashiers?.find(c => c.id == props.filters.cashier_id);
+        if (cashierObj) {
+            parts.push(`Kasir: ${cashierObj.name}`);
+        } else if (props.auth?.user?.role !== 'owner') {
+            parts.push(`Kasir: ${props.auth.user.name}`);
+        }
+    } else if (props.auth?.user?.role !== 'owner') {
+        parts.push(`Kasir: ${props.auth.user.name}`);
+    }
+    
+    // 4. Urutan
+    if (props.filters?.sort) {
+        const sortLabels = {
+            'terbaru': 'Terbaru',
+            'terlama': 'Terlama',
+            'harga_tertinggi': 'Harga Tertinggi',
+            'harga_terendah': 'Harga Terendah',
+        };
+        parts.push(`Urutan: ${sortLabels[props.filters.sort] || 'Terbaru'}`);
+    }
+    
+    // 5. Pencarian
+    if (props.filters?.search) {
+        parts.push(`Kata kunci: "${props.filters.search}"`);
+    }
+
+    return parts.length > 0 ? parts.join(' | ') : 'Menampilkan seluruh transaksi';
+});
+
+const formatDateLabel = (dateStr) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
 };
 </script>
 
@@ -207,29 +281,136 @@ const goToPage = (url) => {
 
             <!-- Content Canvas -->
             <div class="flex-1 overflow-y-auto p-margin-desktop space-y-gutter pb-24 md:pb-margin-desktop">
+                <!-- Validation Warning Banner -->
+                <div v-if="props.validationError" class="bg-error-container text-on-error-container border border-error/20 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm">
+                    <span class="material-symbols-outlined text-error">warning</span>
+                    <span class="text-sm font-semibold">{{ props.validationError }}</span>
+                </div>
+
                 <!-- Filter Bar -->
-                <div class="bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-wrap gap-3 items-end">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs font-bold text-secondary uppercase">Dari Tanggal</label>
-                        <input v-model="dateFrom" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none" />
+                <div class="bg-surface-container-low border border-outline-variant rounded-lg p-4 space-y-4 shadow-sm">
+                    <!-- Baris 1: Pencarian, Pembayaran, Kasir -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Pencarian Universal</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-2.5 text-secondary text-sm">search</span>
+                                <input 
+                                    v-model="search" 
+                                    type="text" 
+                                    placeholder="Cari ID transaksi, barang, atau kasir..." 
+                                    class="w-full h-10 pl-9 pr-3 bg-surface border border-outline-variant rounded text-body-md focus:ring-1 focus:ring-primary focus:outline-none" 
+                                    @keyup.enter="applyFilter"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Metode Pembayaran</label>
+                            <select v-model="paymentMethod" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                                <option value="semua">Semua Pembayaran</option>
+                                <option value="tunai">Tunai</option>
+                                <option value="qris">QRIS</option>
+                            </select>
+                        </div>
+
+                        <div v-if="props.auth?.user?.role === 'owner'" class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Kasir</label>
+                            <select v-model="cashierId" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                                <option value="">Semua Kasir</option>
+                                <option v-for="cashier in props.cashiers" :key="cashier.id" :value="cashier.id">
+                                    {{ cashier.name }} ({{ cashier.username }})
+                                </option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-xs font-bold text-secondary uppercase">Sampai Tanggal</label>
-                        <input v-model="dateTo" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none" />
+
+                    <!-- Baris 2: Tanggal & Urutan -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Dari Tanggal</label>
+                            <input v-model="dateFrom" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Sampai Tanggal</label>
+                            <input v-model="dateTo" type="date" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary uppercase">Urutkan</label>
+                            <select v-model="sort" class="h-10 bg-surface border border-outline-variant rounded px-3 text-body-md focus:ring-1 focus:ring-primary focus:outline-none w-full">
+                                <option value="terbaru">Transaksi Terbaru</option>
+                                <option value="terlama">Transaksi Terlama</option>
+                                <option value="harga_tertinggi">Total Harga Tertinggi</option>
+                                <option value="harga_terendah">Total Harga Terendah</option>
+                            </select>
+                        </div>
                     </div>
-                    <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-4 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">filter_list</span>
-                        Filter
-                    </button>
-                    <button v-if="filters?.date_from || filters?.date_to" @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-4 rounded font-bold text-secondary hover:bg-surface-container-high transition-all flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sm">clear</span>
-                        Reset
-                    </button>
-                    <!-- Info filter aktif -->
-                    <div v-if="filters?.date_from || filters?.date_to" class="ml-auto text-sm text-secondary">
-                        <span v-if="filters.date_from">Dari: {{ filters.date_from }}</span>
-                        <span v-if="filters.date_to"> s/d {{ filters.date_to }}</span>
+
+                    <!-- Baris 3: Aksi tombol -->
+                    <div class="flex justify-start gap-2 pt-2 border-t border-outline-variant">
+                        <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-6 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">filter_list</span>
+                            Terapkan Filter
+                        </button>
+                        <button @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-6 rounded font-bold text-secondary hover:bg-surface-container-high transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">clear_all</span>
+                            Reset
+                        </button>
                     </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div v-if="props.summary" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Card 1: Total Transaksi -->
+                    <div class="bg-surface-container border border-outline-variant rounded-lg p-3 shadow-sm flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined">receipt_long</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-secondary uppercase leading-none">Total Transaksi</p>
+                            <p class="text-xl font-bold text-on-surface mt-1">{{ props.summary.total_count }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Total Omset -->
+                    <div class="bg-surface-container border border-outline-variant rounded-lg p-3 shadow-sm flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined">payments</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-secondary uppercase leading-none">Total Omset</p>
+                            <p class="text-xl font-bold text-on-surface mt-1">{{ formatRupiah(props.summary.total_omset) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Tunai -->
+                    <div class="bg-surface-container border border-outline-variant rounded-lg p-3 shadow-sm flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-surface-container-high text-on-secondary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined">payments</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-secondary uppercase leading-none">Bayar Tunai</p>
+                            <p class="text-xl font-bold text-on-surface mt-1">{{ formatRupiah(props.summary.total_tunai) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: QRIS -->
+                    <div class="bg-surface-container border border-outline-variant rounded-lg p-3 shadow-sm flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-secondary-container text-on-secondary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined">qr_code_2</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-bold text-secondary uppercase leading-none">Bayar QRIS</p>
+                            <p class="text-xl font-bold text-on-surface mt-1">{{ formatRupiah(props.summary.total_qris) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konteks Filter Aktif -->
+                <div class="flex items-center justify-between text-xs font-semibold text-secondary px-1 pt-1">
+                    <span>{{ activeFilterContext }}</span>
                 </div>
 
                 <!-- Transactions Table -->
@@ -248,7 +429,13 @@ const goToPage = (url) => {
                             </thead>
                             <tbody v-if="props.transactions && props.transactions.data">
                                 <tr v-if="props.transactions.data.length === 0">
-                                    <td :colspan="props.auth?.user?.role === 'owner' ? 6 : 5" class="p-8 text-center text-secondary">Belum ada riwayat penjualan untuk periode ini.</td>
+                                    <td :colspan="props.auth?.user?.role === 'owner' ? 6 : 5" class="p-12 text-center text-secondary">
+                                        <div class="flex flex-col items-center justify-center py-6">
+                                            <span class="material-symbols-outlined text-4xl mb-2 text-outline">search_off</span>
+                                            <p class="font-bold text-on-surface">Tidak ada transaksi yang sesuai dengan filter.</p>
+                                            <p class="text-xs text-secondary mt-1">Coba ubah kata kunci, tanggal, atau metode pembayaran.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr v-for="txn in props.transactions.data" :key="txn.id" class="hover:bg-primary-container/5 transition-colors group">
                                     <td class="p-4 border-b border-outline-variant">
