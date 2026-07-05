@@ -129,6 +129,7 @@ class BackupDiagnose extends Command
                 '--host=' . $dbHost,
                 '--port=' . $dbPort,
                 '--user=' . $dbUser,
+                '--ssl-mode=DISABLED',
             ];
 
             if ($dbPass !== null && $dbPass !== '') {
