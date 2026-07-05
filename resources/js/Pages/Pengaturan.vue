@@ -265,11 +265,15 @@ const triggerRestore = () => {
     formData.append('confirmation', restoreConfirmationText.value);
 
     router.post('/backups/restore', formData, {
-        onSuccess: () => {
-            triggerToast('Database berhasil dipulihkan!');
-            showRestoreModal.value = false;
-            restoreFile.value = null;
-            restoreConfirmationText.value = '';
+        onSuccess: (page) => {
+            if (page.props.flash?.error) {
+                triggerToast(page.props.flash.error);
+            } else {
+                triggerToast(page.props.flash?.success || 'Database berhasil dipulihkan!');
+                showRestoreModal.value = false;
+                restoreFile.value = null;
+                restoreConfirmationText.value = '';
+            }
         },
         onError: (err) => {
             triggerToast(err.backup_file || err.confirmation || 'Gagal memulihkan database.');

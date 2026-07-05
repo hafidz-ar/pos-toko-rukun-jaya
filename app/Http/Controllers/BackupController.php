@@ -140,7 +140,7 @@ class BackupController extends Controller
 
         $file = $request->file('backup_file');
         $tempPath = $file->storeAs('temp', 'restore_' . time() . '.sql');
-        $fullPath = storage_path('app/' . $tempPath);
+        $fullPath = Storage::path($tempPath);
 
         $dbName = config('database.connections.mysql.database');
         $dbUser = config('database.connections.mysql.username');
