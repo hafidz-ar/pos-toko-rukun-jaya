@@ -1,0 +1,4 @@
+# Nixpacks configuration for Railway
+
+[phases.setup]
+nixPkgs = ["...", "mysql"]
