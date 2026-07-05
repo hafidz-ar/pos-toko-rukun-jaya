@@ -9,13 +9,16 @@ class Backup extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'filename',
         'filepath',
         'file_size',
+        'status',
+        'error_message',
         'created_at',
+        'updated_at',
     ];
 
     protected function casts(): array
@@ -23,6 +26,7 @@ class Backup extends Model
         return [
             'file_size' => 'integer',
             'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 }

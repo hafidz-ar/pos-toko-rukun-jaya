@@ -15,82 +15,63 @@ Artisan::command('inspire', function () {
 | Daily automated database backup (PRD 3.8).
 | Runs at 02:00 AM every day.
 */
-Artisan::command('backup:run', function () {
+Artisan::command('backup:run', function (\App\Services\DatabaseBackupService $backupService) {
     $this->info('Running daily backup...');
 
-    $dbName = config('database.connections.mysql.database');
-    $dbUser = config('database.connections.mysql.username');
-    $dbPass = config('database.connections.mysql.password');
-    $dbHost = config('database.connections.mysql.host');
-    $dbPort = config('database.connections.mysql.port');
-
-    $filename = 'backup_' . date('Y-m-d_His') . '.sql';
-    $backupDir = storage_path('app/backups');
-
-    if (!is_dir($backupDir)) {
-        mkdir($backupDir, 0755, true);
-    }
-
-    $filepath = $backupDir . DIRECTORY_SEPARATOR . $filename;
-
-    $command = sprintf(
-        'mysqldump --host=%s --port=%s --user=%s %s %s > %s',
-        escapeshellarg($dbHost),
-        escapeshellarg($dbPort),
-        escapeshellarg($dbUser),
-        $dbPass ? '--password=' . escapeshellarg($dbPass) : '',
-        escapeshellarg($dbName),
-        escapeshellarg($filepath)
-    );
-
-    exec($command, $output, $returnCode);
-
-    if ($returnCode !== 0 || !file_exists($filepath)) {
-        $this->error('Backup failed!');
-        return;
-    }
-
+    // 1. Create initial metadata in processing state
     $backup = \App\Models\Backup::create([
-        'filename' => $filename,
-        'filepath' => $filepath,
-        'file_size' => filesize($filepath),
+        'filename' => 'backup_pending_' . date('Y-m-d_His') . '.sql',
+        'filepath' => '',
+        'file_size' => 0,
+        'status' => 'processing',
         'created_at' => now(),
     ]);
 
-    // Notify owner(s)
-    $owners = \App\Models\User::where('role', 'owner')->where('is_active', true)->get();
-    foreach ($owners as $owner) {
-        \App\Models\Notification::create([
-            'recipient_user_id' => $owner->id,
-            'type' => 'backup',
-            'is_anomaly' => false,
-            'message' => 'Backup harian berhasil dibuat: ' . $filename . '. Klik untuk download.',
-            'is_read' => false,
-            'created_at' => now(),
+    try {
+        $metadata = $backupService->backup();
+
+        $backup->update([
+            'filename' => $metadata['filename'],
+            'filepath' => $metadata['filepath'],
+            'file_size' => $metadata['file_size'],
+            'status' => 'completed',
         ]);
 
-        if ($owner->telegram_chat_id) {
-            try {
-                app(\App\Services\TelegramService::class)->sendMessage(
-                    $owner->telegram_chat_id,
-                    '📦 Backup harian berhasil: ' . $filename
-                );
-            } catch (\Throwable $e) {
-                // fail-silent
+        $this->info("Backup completed: {$backup->filename}");
+
+        // Notify owners
+        $owners = \App\Models\User::where('role', 'owner')->where('is_active', true)->get();
+        foreach ($owners as $owner) {
+            \App\Models\Notification::create([
+                'recipient_user_id' => $owner->id,
+                'type' => 'backup',
+                'is_anomaly' => false,
+                'message' => 'Backup harian berhasil dibuat: ' . $backup->filename . '.',
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+
+            if ($owner->telegram_chat_id) {
+                try {
+                    app(\App\Services\TelegramService::class)->sendMessage(
+                        $owner->telegram_chat_id,
+                        '📦 Backup harian berhasil: ' . $backup->filename
+                    );
+                } catch (\Throwable $e) {
+                    // fail-silent
+                }
             }
         }
-    }
+    } catch (\Throwable $e) {
+        $backup->update([
+            'status' => 'failed',
+            'error_message' => $e->getMessage(),
+        ]);
 
-    // Clean old backups (>7 days retention)
-    $oldBackups = \App\Models\Backup::where('created_at', '<', now()->subDays(7))->get();
-    foreach ($oldBackups as $old) {
-        if (file_exists($old->filepath)) {
-            @unlink($old->filepath);
-        }
-        $old->delete();
+        $this->error('Backup failed: ' . $e->getMessage());
+        \Log::error('Daily scheduled backup failed. ID: ' . $backup->id . ' | Error: ' . $e->getMessage());
     }
-
-    $this->info("Backup completed: {$filename}");
 })->purpose('Create daily database backup');
 
 Schedule::command('backup:run')->dailyAt('02:00');
+Schedule::command('backups:cleanup')->daily();
