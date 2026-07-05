@@ -144,7 +144,10 @@ class SalesHistorySeeder extends Seeder
                 if ($maxDiscount > 5000) {
                     $allowedMax = min($maxDiscount * 0.5, 50000);
                     if ($allowedMax >= 5000) {
-                        $discountSteps = range(5000, $allowedMax, 5000);
+                        $discountSteps = [];
+                        for ($val = 5000; $val <= $allowedMax; $val += 5000) {
+                            $discountSteps[] = $val;
+                        }
                         if (!empty($discountSteps)) {
                             $discount = (float) $discountSteps[array_rand($discountSteps)];
                         }
