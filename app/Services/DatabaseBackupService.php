@@ -46,7 +46,7 @@ class DatabaseBackupService
             '--host=' . $dbHost,
             '--port=' . $dbPort,
             '--user=' . $dbUser,
-            '--ssl-mode=DISABLED',
+            $this->getSslOption(),
         ];
 
         if ($dbPass !== null && $dbPass !== '') {
@@ -138,7 +138,7 @@ class DatabaseBackupService
             '--host=' . $dbHost,
             '--port=' . $dbPort,
             '--user=' . $dbUser,
-            '--ssl-mode=DISABLED',
+            $this->getSslOption(),
         ];
 
         if ($dbPass !== null && $dbPass !== '') {
@@ -181,5 +181,21 @@ class DatabaseBackupService
         $message = preg_replace('/--password=\S+/i', '--password=***', $message);
 
         return trim($message);
+    }
+
+    /**
+     * Determine the correct SSL flag to use based on client version.
+     */
+    private function getSslOption(): string
+    {
+        try {
+            $result = Process::run(['mysqldump', '--version']);
+            if ($result->successful() && str_contains(strtolower($result->output()), 'mariadb')) {
+                return '--skip-ssl';
+            }
+        } catch (\Throwable $e) {
+            // fallback
+        }
+        return '--ssl-mode=DISABLED';
     }
 }

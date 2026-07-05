@@ -129,7 +129,7 @@ class BackupDiagnose extends Command
                 '--host=' . $dbHost,
                 '--port=' . $dbPort,
                 '--user=' . $dbUser,
-                '--ssl-mode=DISABLED',
+                $this->getSslOption(),
             ];
 
             if ($dbPass !== null && $dbPass !== '') {
@@ -183,5 +183,21 @@ class BackupDiagnose extends Command
             $this->error("TERDAPAT KENDALA: Ada $errorsCount pengujian yang gagal. Periksa log di atas.");
             return 1;
         }
+    }
+
+    /**
+     * Determine the correct SSL flag to use based on client version.
+     */
+    private function getSslOption(): string
+    {
+        try {
+            $result = Process::run(['mysqldump', '--version']);
+            if ($result->successful() && str_contains(strtolower($result->output()), 'mariadb')) {
+                return '--skip-ssl';
+            }
+        } catch (Throwable $e) {
+            // fallback
+        }
+        return '--ssl-mode=DISABLED';
     }
 }
