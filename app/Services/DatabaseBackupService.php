@@ -86,16 +86,35 @@ class DatabaseBackupService
         }
 
         // Validate the output file
-        if (!file_exists($filepath) || filesize($filepath) < 100) {
-            @unlink($filepath);
-            throw new RuntimeException('File backup kosong atau gagal dibuat.');
+        if (!file_exists($filepath)) {
+            throw new RuntimeException('File backup tidak berhasil dibuat.');
         }
 
-        // Check if file starts with valid SQL header
-        $header = file_get_contents($filepath, false, null, 0, 200);
-        if (!str_contains($header, 'MySQL dump')) {
+        $size = filesize($filepath);
+        if ($size === false || $size < 100) {
             @unlink($filepath);
-            throw new RuntimeException('Format file backup tidak valid (Header MySQL dump tidak ditemukan).');
+            throw new RuntimeException('File backup kosong atau ukurannya terlalu kecil.');
+        }
+
+        $header = file_get_contents($filepath, false, null, 0, 4096);
+        if ($header === false) {
+            @unlink($filepath);
+            throw new RuntimeException('File backup tidak dapat dibaca.');
+        }
+
+        $isValidDump =
+            str_contains($header, 'MySQL dump') ||
+            str_contains($header, 'MariaDB dump') ||
+            str_contains($header, 'enable the sandbox mode') ||
+            str_contains($header, 'Current Database:') ||
+            str_contains($header, 'CREATE TABLE') ||
+            str_contains($header, 'DROP TABLE');
+
+        if (!$isValidDump) {
+            @unlink($filepath);
+            throw new RuntimeException(
+                'Format file backup tidak valid. File tidak memiliki struktur SQL dump yang dikenali.'
+            );
         }
 
         return [

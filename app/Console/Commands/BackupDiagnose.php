@@ -153,11 +153,19 @@ class BackupDiagnose extends Command
                 fclose($fileHandle);
 
                 if ($result->successful() && file_exists($testSqlPath) && filesize($testSqlPath) > 50) {
-                    $header = file_get_contents($testSqlPath, false, null, 0, 200);
-                    if (str_contains($header, 'MySQL dump')) {
+                    $header = file_get_contents($testSqlPath, false, null, 0, 4096);
+                    $isValidDump =
+                        str_contains($header, 'MySQL dump') ||
+                        str_contains($header, 'MariaDB dump') ||
+                        str_contains($header, 'enable the sandbox mode') ||
+                        str_contains($header, 'Current Database:') ||
+                        str_contains($header, 'CREATE TABLE') ||
+                        str_contains($header, 'DROP TABLE');
+
+                    if ($isValidDump) {
                         $this->line('[OK] Test dump berhasil dibuat dan valid (' . filesize($testSqlPath) . ' bytes).');
                     } else {
-                        $this->error('[FAIL] Test dump dibuat tetapi format tidak valid.');
+                        $this->error('[FAIL] Test dump dibuat tetapi format tidak valid (Struktur SQL dump tidak dikenali).');
                         $errorsCount++;
                     }
                 } else {
