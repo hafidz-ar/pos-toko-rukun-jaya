@@ -60,12 +60,13 @@ class BackupController extends Controller
             escapeshellarg($filepath)
         );
 
-        exec($command, $output, $returnCode);
+        exec($command . ' 2>&1', $output, $returnCode);
 
         if ($returnCode !== 0 || !file_exists($filepath)) {
+            \Log::error('Backup creation failed. Command: ' . $command . ' | Return code: ' . $returnCode . ' | Output: ' . implode("\n", $output));
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membuat backup database.',
+                'message' => 'Gagal membuat backup database. Detail: ' . implode(' ', $output),
             ], 500);
         }
 
@@ -158,13 +159,14 @@ class BackupController extends Controller
             escapeshellarg($fullPath)
         );
 
-        exec($command, $output, $returnCode);
+        exec($command . ' 2>&1', $output, $returnCode);
 
         // Clean up temp file
         @unlink($fullPath);
 
         if ($returnCode !== 0) {
-            return back()->with('error', 'Gagal memulihkan database. Pastikan file backup valid.');
+            \Log::error('Restore database failed. Command: ' . $command . ' | Return code: ' . $returnCode . ' | Output: ' . implode("\n", $output));
+            return back()->with('error', 'Gagal memulihkan database. Detail: ' . implode(' ', $output));
         }
 
         return back()->with('success', 'Database berhasil dipulihkan dari backup.');
