@@ -11,7 +11,10 @@ const props = defineProps({
     filters: Object,
 });
 
-const perPage = ref(parseInt(localStorage.getItem('pos_per_page_restok') || props.filters?.per_page || '10'));
+const perPage = ref(parseInt(props.filters?.per_page || localStorage.getItem('pos_per_page_restok') || '10'));
+if (![5, 10, 20, 50].includes(perPage.value)) {
+    perPage.value = 10;
+}
 
 const applyPerPage = () => {
     localStorage.setItem('pos_per_page_restok', perPage.value.toString());

@@ -79,7 +79,7 @@ class RestockController extends Controller
             'products' => $products,
             'filters' => [
                 'product_id' => $request->get('product_id', ''),
-                'per_page' => $perPage,
+                'per_page' => $request->has('per_page') ? $perPage : null,
             ],
         ]);
     }

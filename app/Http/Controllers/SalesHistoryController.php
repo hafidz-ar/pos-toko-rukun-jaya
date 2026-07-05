@@ -101,7 +101,7 @@ class SalesHistoryController extends Controller
                 'sort' => $filters['sort'] ?? 'latest',
                 'date_from' => $filters['date_from'] ?? '',
                 'date_to' => $filters['date_to'] ?? '',
-                'per_page' => $perPage,
+                'per_page' => $request->has('per_page') ? $perPage : null,
             ],
             'validationError' => $validationError,
         ]);

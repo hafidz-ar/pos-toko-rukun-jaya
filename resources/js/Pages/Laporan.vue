@@ -58,7 +58,10 @@ const selectedYear = ref(props.filters?.year ? parseInt(props.filters.year) : ne
 const customStartDate = ref(props.filters?.start_date || '');
 const customEndDate = ref(props.filters?.end_date || '');
 
-const perPage = ref(parseInt(localStorage.getItem('pos_per_page_laporan') || props.filters?.per_page || '10'));
+const perPage = ref(parseInt(props.filters?.per_page || localStorage.getItem('pos_per_page_laporan') || '10'));
+if (![5, 10, 20, 50].includes(perPage.value)) {
+    perPage.value = 10;
+}
 const isFiltering = ref(false);
 
 const setPeriodTab = (tab) => {

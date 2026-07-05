@@ -100,7 +100,7 @@ class InventoryController extends Controller
                 'search' => $request->get('search', ''),
                 'category_id' => $request->get('category_id', ''),
                 'low_stock' => $request->boolean('low_stock'),
-                'per_page' => $perPage,
+                'per_page' => $request->has('per_page') ? $perPage : null,
             ],
         ]);
     }

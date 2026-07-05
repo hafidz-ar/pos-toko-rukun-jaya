@@ -60,7 +60,10 @@ onUnmounted(() => {
 const search = ref(props.filters?.search || '');
 const categoryId = ref(props.filters?.category_id || '');
 const lowStockOnly = ref(props.filters?.low_stock || false);
-const perPage = ref(parseInt(localStorage.getItem('pos_per_page_inventaris') || props.filters?.per_page || '10'));
+const perPage = ref(parseInt(props.filters?.per_page || localStorage.getItem('pos_per_page_inventaris') || '10'));
+if (![5, 10, 20, 50].includes(perPage.value)) {
+    perPage.value = 10;
+}
 
 const applyFilter = () => {
     localStorage.setItem('pos_per_page_inventaris', perPage.value.toString());
@@ -814,7 +817,7 @@ const closeMovements = () => {
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="block text-label-md font-bold text-secondary mb-2">Upload Foto Produk (Cloudinary)</label>
+                            <label class="block text-label-md font-bold text-secondary mb-2">Upload Foto Produk</label>
                             <input type="file" accept="image/*" @change="handleAddPhotoChange" class="w-full p-2 border-2 border-outline-variant rounded bg-white text-sm focus:ring-0 focus:border-primary">
                             <p v-if="addErrors.photo_file" class="text-error text-xs mt-1">{{ addErrors.photo_file }}</p>
                             <div v-if="addPhotoPreviewUrl" class="mt-3 w-32 h-32 border-2 border-outline-variant rounded-lg overflow-hidden bg-surface-container-low flex items-center justify-center">
@@ -970,7 +973,7 @@ const closeMovements = () => {
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="block text-label-md font-bold text-secondary mb-2">Upload Foto Produk Baru (Cloudinary)</label>
+                            <label class="block text-label-md font-bold text-secondary mb-2">Upload Foto Produk</label>
                             <input type="file" accept="image/*" @change="handleEditPhotoChange" class="w-full p-2 border-2 border-outline-variant rounded bg-white text-sm focus:ring-0 focus:border-primary">
                             <p v-if="editErrors.photo_file" class="text-error text-xs mt-1">{{ editErrors.photo_file }}</p>
                             

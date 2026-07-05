@@ -43,7 +43,10 @@ const cashier_user_id = ref(props.filters?.cashier_user_id || '');
 const sort = ref(props.filters?.sort || 'latest');
 const dateFrom = ref(props.filters?.date_from || '');
 const dateTo = ref(props.filters?.date_to || '');
-const perPage = ref(parseInt(localStorage.getItem('pos_per_page_penjualan') || props.filters?.per_page || '10'));
+const perPage = ref(parseInt(props.filters?.per_page || localStorage.getItem('pos_per_page_penjualan') || '10'));
+if (![5, 10, 20, 50].includes(perPage.value)) {
+    perPage.value = 10;
+}
 
 const applyFilter = () => {
     localStorage.setItem('pos_per_page_penjualan', perPage.value.toString());

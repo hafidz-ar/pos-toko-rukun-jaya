@@ -18,7 +18,10 @@ class ReportController extends Controller
     {
         $reportData = $this->getReportData($request);
 
-        $perPage = $reportData['filters']['per_page'];
+        $perPage = $reportData['filters']['per_page'] ?? 10;
+        if (!in_array($perPage, [5, 10, 20, 50])) {
+            $perPage = 10;
+        }
         $labaPerProduk = $reportData['labaPerProduk'];
 
         // Paginate $labaPerProduk in-memory
@@ -473,7 +476,7 @@ class ReportController extends Controller
                 'year' => $request->get('year'),
                 'start_date' => $startDate->format('Y-m-d'),
                 'end_date' => $endDate->format('Y-m-d'),
-                'per_page' => $perPage,
+                'per_page' => $request->has('per_page') ? $perPage : null,
             ],
             'validationError' => $validationError,
         ];

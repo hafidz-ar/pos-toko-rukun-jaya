@@ -31,14 +31,13 @@ const handleLogin = () => {
             <!-- Store Logo Area -->
             <div class="mb-6 md:mb-8 flex flex-col items-center animate-fade-in">
                 <div class="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 bg-primary flex items-center justify-center rounded-xl shadow-md">
-                    <span class="material-symbols-outlined text-on-primary !text-[36px] md:!text-[44px]" style="font-variation-settings: 'FILL' 1;">
-                        construction
+                    <span class="text-on-primary font-bold text-2xl md:text-3xl tracking-wider">
+                        RJ
                     </span>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-bold text-primary tracking-tight text-center">
                     Toko Rukun Jaya
                 </h1>
-                <p class="text-xs md:text-sm text-secondary mt-1">Industrial Excellence &amp; Precision</p>
             </div>
             
             <!-- Authentication Card -->

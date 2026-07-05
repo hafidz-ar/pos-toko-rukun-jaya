@@ -596,7 +596,7 @@ const openOwnerMenu = (menuName, path) => {
                                                 :style="[{ top: `calc(${Math.max(0, Math.min(100, point.y / 2))}% - 85px)` }, getTooltipStyle(idx, chartPoints.length)]"
                                             >
                                                 <p class="font-bold text-primary-fixed mb-1">{{ point.full_date }}</p>
-                                                <p class="leading-relaxed">Penjualan: <span class="font-bold text-on-primary-fixed">{{ point.amount }}</span></p>
+                                                <p class="leading-relaxed">Penjualan: <span class="font-bold text-primary-fixed">{{ point.amount }}</span></p>
                                                 <p class="leading-relaxed">Jumlah Transaksi: <span class="font-bold text-primary-fixed">{{ point.count }} Nota</span></p>
                                             </div>
  
