@@ -35,7 +35,6 @@ class CloudinaryService
             'timestamp' => $timestamp,
             'folder' => 'pos-toko/products',
             'transformation' => 'w_800,h_800,c_limit,q_auto,f_auto',
-            'overwrite' => 'true',
         ];
 
         // Sort parameters alphabetically
@@ -53,20 +52,41 @@ class CloudinaryService
 
         // Use Http::attach() — the proper Laravel way to send multipart file uploads.
         // This avoids format inconsistencies across different Guzzle/PHP versions.
-        $response = Http::attach(
-            'file',
-            file_get_contents($file->getRealPath()),
-            $file->getClientOriginalName()
-        )->post(
-            "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
-            array_merge($params, [
-                'api_key' => $apiKey,
-                'signature' => $signature,
-            ])
-        );
+        \Log::info('Cloudinary upload diagnostic', [
+            'file_valid' => $file->isValid(),
+            'file_error' => $file->getError(),
+            'file_error_message' => $file->getErrorMessage(),
+            'real_path' => $file->getRealPath(),
+            'path_exists' => file_exists($file->getRealPath()),
+            'path_readable' => is_readable($file->getRealPath()),
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'cloud_name' => $cloudName,
+        ]);
+
+        $response = Http::timeout(60)
+            ->attach(
+                'file',
+                fopen($file->getRealPath(), 'r'),
+                $file->getClientOriginalName()
+            )
+            ->post(
+                "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
+                array_merge($params, [
+                    'api_key' => $apiKey,
+                    'signature' => $signature,
+                ])
+            );
+
+        \Log::info('Cloudinary upload response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
 
         if ($response->failed()) {
-            $errorMsg = $response->json('error.message') ?? 'Terjadi kesalahan tidak dikenal.';
+            $errorMsg = $response->json('error.message')
+                ?? $response->body()
+                ?? 'Terjadi kesalahan tidak dikenal.';
             throw new \Exception("Gagal mengunggah foto ke Cloudinary: " . $errorMsg);
         }
 
@@ -128,4 +148,3 @@ class CloudinaryService
         }
     }
 }
-
