@@ -51,17 +51,18 @@ class CloudinaryService
         // Generate signature
         $signature = sha1($parameterString . $apiSecret);
 
-        // Build post parameters
-        $postParams = array_merge($params, [
-            'file' => fopen($file->getRealPath(), 'r'),
-            'api_key' => $apiKey,
-            'signature' => $signature,
-        ]);
-
-        // Send multipart POST request to Cloudinary API
-        $response = Http::asMultipart()->post(
+        // Use Http::attach() — the proper Laravel way to send multipart file uploads.
+        // This avoids format inconsistencies across different Guzzle/PHP versions.
+        $response = Http::attach(
+            'file',
+            file_get_contents($file->getRealPath()),
+            $file->getClientOriginalName()
+        )->post(
             "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
-            $postParams
+            array_merge($params, [
+                'api_key' => $apiKey,
+                'signature' => $signature,
+            ])
         );
 
         if ($response->failed()) {
@@ -108,7 +109,8 @@ class CloudinaryService
         $signature = sha1($parameterString . $apiSecret);
 
         try {
-            $response = Http::asMultipart()->post(
+            // Use asForm() for non-file POST — more reliable than asMultipart for simple key-value data
+            $response = Http::asForm()->post(
                 "https://api.cloudinary.com/v1_1/{$cloudName}/image/destroy",
                 [
                     'public_id' => $publicId,
@@ -126,3 +128,4 @@ class CloudinaryService
         }
     }
 }
+
