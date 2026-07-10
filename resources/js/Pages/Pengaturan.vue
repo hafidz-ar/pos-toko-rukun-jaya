@@ -466,7 +466,7 @@ const linkTelegram = () => {
                                                 <div class="flex items-center space-x-2">
                                                     <button @click="openEditUser(user)" class="material-symbols-outlined text-secondary hover:text-primary transition-colors cursor-pointer" title="Edit User">edit</button>
                                                     <button @click="openResetPw(user)" class="material-symbols-outlined text-secondary hover:text-warning transition-colors cursor-pointer" title="Reset Password">lock_reset</button>
-                                                    <button @click="deactivateUser(user)" :disabled="user.id === props.auth?.user?.id" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer disabled:opacity-30" title="Nonaktifkan">delete</button>
+                                                    <button @click="deactivateUser(user)" :disabled="user.id === props.auth?.user?.id" class="material-symbols-outlined text-secondary hover:text-error transition-colors cursor-pointer disabled:opacity-30" title="Nonaktifkan">person_off</button>
                                                 </div>
                                             </td>
                                         </tr>

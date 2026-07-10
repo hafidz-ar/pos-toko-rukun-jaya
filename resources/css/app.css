@@ -228,8 +228,7 @@ input[type="password"]::-ms-clear {
 
     /* Print margins */
     @page {
-        size: A4;
-        margin: 1.5cm;
+        margin: 0;
     }
 
     /* Ensure tables split nicely across pages */

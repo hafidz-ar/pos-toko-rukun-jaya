@@ -684,7 +684,7 @@ const handleLogout = () => {
         <!-- Modal Struk -->
         <Transition name="fade">
             <div v-if="showReceiptModal && receiptData" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" id="receipt-modal">
-                <div class="bg-white w-full max-w-sm rounded shadow-2xl overflow-hidden flex flex-col font-mono text-black p-6 border-t-8 border-primary">
+                <div id="receipt-print" class="bg-white w-full max-w-sm rounded shadow-2xl overflow-hidden flex flex-col font-mono text-black p-6 border-t-8 border-primary">
                     <div class="text-center border-b border-dashed border-gray-300 pb-4 mb-4">
                         <h2 class="text-xl font-bold uppercase">STRUK PEMBAYARAN</h2>
                         <p class="text-xs">TOKO RUKUN JAYA</p>
@@ -740,7 +740,7 @@ const handleLogout = () => {
                         <p>Terima Kasih Atas Kunjungan Anda</p>
                         <p>Barang yang sudah dibeli tidak dapat ditukar</p>
                     </div>
-                    <div class="flex gap-2 mt-4">
+                    <div class="flex gap-2 mt-4 no-print">
                         <button class="flex-1 h-12 border border-gray-300 rounded font-bold font-sans text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1" @click="printReceipt">
                             <span class="material-symbols-outlined text-sm">print</span> Cetak
                         </button>
@@ -767,50 +767,91 @@ const handleLogout = () => {
 .fade-leave-to {
   opacity: 0;
 }
+</style>
 
+<style>
+/* ===== Print Styles for Receipt — NON-SCOPED agar @page berlaku global ===== */
 @page {
+    size: 80mm auto;
     margin: 0;
 }
 
 @media print {
-    /* Hide all elements on the body except the receipt modal content */
-    body * {
-        visibility: hidden;
+    /* Sembunyikan seluruh elemen di luar app */
+    body > *:not(#app) {
+        display: none !important;
     }
-    
-    /* Make the receipt modal container and all its descendants visible */
-    #receipt-modal,
-    #receipt-modal * {
-        visibility: visible;
-    }
-    
-    /* Remove grey/black backdrop background and border lines for print */
-    #receipt-modal {
-        background: white !important;
-        backdrop-filter: none !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
+
+    /* Reset tinggi, overflow, flex, dan position pada container utama agar tidak membatasi tinggi halaman */
+    html, body, #app, #app > div {
+        position: static !important;
+        width: auto !important;
         height: auto !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: start !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+
+    /* Sembunyikan sidebar, navbar, main area, dan tombol aksi sepenuhnya dari layout */
+    nav, aside, main, .no-print {
+        display: none !important;
+    }
+
+    /* Sembunyikan backdrop modal */
+    #receipt-modal {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        position: static !important;
         padding: 0 !important;
         margin: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        display: block !important;
     }
-    
-    /* Keep the card design exactly as in the popup menu (rounded, top border, shadow, margins) */
-    #receipt-modal > div {
-        width: 100% !important;
-        max-width: 384px !important; /* matches max-w-sm */
-        margin: 20px auto !important;
-        background: white !important;
+
+    /* Struk belanja berada dalam normal flow */
+    #receipt-print {
+        position: relative !important;
+        margin: 0 !important;
+        padding: 4mm !important;
+        width: 80mm !important;
+        min-height: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-top: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        font-size: 11px !important;
+        page-break-after: avoid !important;
+        break-after: avoid-page !important;
     }
-    
-    /* Hide receipt control buttons (Cetak & Transaksi Baru) during printing */
-    #receipt-modal .flex.gap-2 {
-        display: none !important;
+
+    /* Sembunyikan semua elemen selain struk secara visual (safety fallback) */
+    body * {
+        visibility: hidden !important;
+    }
+
+    #receipt-print,
+    #receipt-print * {
+        visibility: visible !important;
+    }
+
+    /* Pastikan nama produk panjang tidak overflow */
+    #receipt-print .flex-grow {
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    /* Footer struk tidak terpisah ke halaman baru */
+    #receipt-print .text-center:last-of-type {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 }
 </style>

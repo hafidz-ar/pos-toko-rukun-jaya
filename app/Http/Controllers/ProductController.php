@@ -43,7 +43,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:products,name,NULL,id,is_active,1',
             'category_id' => 'required|exists:categories,id',
             'base_unit_id' => 'required|exists:units,id',
             'cost_price_per_base_unit' => 'required|numeric|min:0',
@@ -57,6 +57,8 @@ class ProductController extends Controller
             'units.*.unit_id' => 'required_with:units|exists:units,id',
             'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001|max:1000000',
             'units.*.selling_price' => 'nullable|numeric|min:0',
+        ], [
+            'name.unique' => 'Nama barang sudah terdaftar di sistem.',
         ]);
 
         // Business validations
@@ -130,7 +132,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:products,name,' . $product->id . ',id,is_active,1',
             'category_id' => 'required|exists:categories,id',
             'base_unit_id' => 'required|exists:units,id',
             'selling_price_per_base_unit' => 'required|numeric|min:0',
@@ -143,6 +145,8 @@ class ProductController extends Controller
             'units.*.unit_id' => 'required_with:units|exists:units,id',
             'units.*.conversion_factor' => 'required_with:units|numeric|min:0.0001|max:1000000',
             'units.*.selling_price' => 'nullable|numeric|min:0',
+        ], [
+            'name.unique' => 'Nama barang sudah terdaftar di sistem.',
         ]);
 
         // Business validations

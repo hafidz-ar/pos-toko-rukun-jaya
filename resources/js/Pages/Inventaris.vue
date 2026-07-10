@@ -37,7 +37,7 @@ onMounted(() => {
         router.get('/inventaris', {
             search: search.value || undefined,
             category_id: categoryId.value || undefined,
-            low_stock: lowStockOnly.value || undefined,
+            sort: sortBy.value || undefined,
             per_page: savedPerPage
         }, { replace: true, preserveState: false });
         return;
@@ -59,7 +59,7 @@ onUnmounted(() => {
 // ───────── Filter / Search ─────────
 const search = ref(props.filters?.search || '');
 const categoryId = ref(props.filters?.category_id || '');
-const lowStockOnly = ref(props.filters?.low_stock || false);
+const sortBy = ref(props.filters?.sort || 'name_asc');
 const perPage = ref(parseInt(props.filters?.per_page || localStorage.getItem('pos_per_page_inventaris') || '10'));
 if (![5, 10, 20, 50].includes(perPage.value)) {
     perPage.value = 10;
@@ -70,7 +70,7 @@ const applyFilter = () => {
     router.get('/inventaris', {
         search: search.value || undefined,
         category_id: categoryId.value || undefined,
-        low_stock: lowStockOnly.value || undefined,
+        sort: sortBy.value || undefined,
         per_page: perPage.value || undefined,
     }, { preserveState: false });
 };
@@ -78,7 +78,7 @@ const applyFilter = () => {
 const resetFilter = () => {
     search.value = '';
     categoryId.value = '';
-    lowStockOnly.value = false;
+    sortBy.value = 'name_asc';
     router.get('/inventaris', {
         per_page: perPage.value || undefined,
     }, { preserveState: false });
@@ -208,6 +208,15 @@ const removeUnit = (i) => {
 
 const submitAdd = () => {
     addErrors.value = {};
+
+    // Validasi nama barang
+    if (addForm.name) {
+        addForm.name = addForm.name.trim();
+    }
+    if (!addForm.name) {
+        addErrors.value = { name: 'Nama barang wajib diisi.' };
+        return;
+    }
 
     // Validasi harga jual vs harga modal
     if (Number(addForm.selling_price_per_base_unit) < Number(addForm.cost_price_per_base_unit)) {
@@ -341,6 +350,15 @@ const removeEditUnit = (i) => {
 
 const submitEdit = () => {
     editErrors.value = {};
+
+    // Validasi nama barang
+    if (editForm.name) {
+        editForm.name = editForm.name.trim();
+    }
+    if (!editForm.name) {
+        editErrors.value = { name: 'Nama barang wajib diisi.' };
+        return;
+    }
 
     // Validasi harga jual vs harga modal
     if (Number(editForm.selling_price_per_base_unit) < currentProductCostPrice.value) {
@@ -553,16 +571,21 @@ const closeMovements = () => {
                             <option v-for="cat in props.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                         </BaseSelect>
                     </div>
-                    <div class="flex items-end gap-2">
-                        <label class="flex items-center gap-2 h-10 cursor-pointer">
-                            <input v-model="lowStockOnly" type="checkbox" class="w-4 h-4" />
-                            <span class="text-sm font-bold text-secondary">Stok Rendah</span>
-                        </label>
+                    <div class="flex flex-col gap-1 w-full md:w-52">
+                        <label class="text-xs font-bold text-secondary uppercase">Urutkan</label>
+                        <BaseSelect v-model="sortBy" @change="applyFilter" size="small" class="w-full">
+                            <option value="name_asc">Nama (A-Z)</option>
+                            <option value="name_desc">Nama (Z-A)</option>
+                            <option value="price_desc">Harga Termahal</option>
+                            <option value="price_asc">Harga Termurah</option>
+                            <option value="stock_asc">Stok Terendah</option>
+                            <option value="stock_desc">Stok Terbanyak</option>
+                        </BaseSelect>
                     </div>
                     <button @click="applyFilter" class="h-10 bg-primary text-on-primary px-4 rounded font-bold hover:brightness-90 transition-all flex items-center gap-2">
                         <span class="material-symbols-outlined text-sm">search</span> Cari
                     </button>
-                    <button v-if="filters?.search || filters?.category_id || filters?.low_stock" @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-4 rounded font-bold text-secondary hover:bg-surface-container-high transition-all">
+                    <button v-if="filters?.search || filters?.category_id || (filters?.sort && filters.sort !== 'name_asc')" @click="resetFilter" class="h-10 border border-outline-variant bg-surface-container px-4 rounded font-bold text-secondary hover:bg-surface-container-high transition-all">
                         Reset
                     </button>
                     <button v-if="props.auth?.user?.role === 'owner'" @click="openAddModal" class="btn-primary ml-auto h-10 px-6 flex items-center gap-2 rounded">

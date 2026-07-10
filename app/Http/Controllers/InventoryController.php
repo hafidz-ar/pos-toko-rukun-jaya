@@ -44,7 +44,35 @@ class InventoryController extends Controller
             $perPage = 10;
         }
 
-        $products = $query->orderBy('name')->paginate($perPage)->withQueryString()->through(function ($product) {
+        $sort = $request->get('sort', 'name_asc');
+        $allowedSorts = ['name_asc', 'name_desc', 'price_desc', 'price_asc', 'stock_asc', 'stock_desc'];
+        if (!in_array($sort, $allowedSorts)) {
+            $sort = 'name_asc';
+        }
+
+        switch ($sort) {
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'price_desc':
+                $query->orderBy('selling_price_per_base_unit', 'desc');
+                break;
+            case 'price_asc':
+                $query->orderBy('selling_price_per_base_unit', 'asc');
+                break;
+            case 'stock_asc':
+                $query->orderBy('stock_qty_base_unit', 'asc');
+                break;
+            case 'stock_desc':
+                $query->orderBy('stock_qty_base_unit', 'desc');
+                break;
+            case 'name_asc':
+            default:
+                $query->orderBy('name', 'asc');
+                break;
+        }
+
+        $products = $query->paginate($perPage)->withQueryString()->through(function ($product) {
             $altDisplay = $this->getAlternativeStockDisplay($product);
 
             return [
@@ -100,6 +128,7 @@ class InventoryController extends Controller
                 'search' => $request->get('search', ''),
                 'category_id' => $request->get('category_id', ''),
                 'low_stock' => $request->boolean('low_stock'),
+                'sort' => $sort,
                 'per_page' => $request->has('per_page') ? $perPage : null,
             ],
         ]);
