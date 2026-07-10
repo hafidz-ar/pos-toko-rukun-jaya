@@ -18,6 +18,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
