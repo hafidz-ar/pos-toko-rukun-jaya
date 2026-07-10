@@ -52,35 +52,39 @@ class CloudinaryService
 
         // Use Http::attach() — the proper Laravel way to send multipart file uploads.
         // This avoids format inconsistencies across different Guzzle/PHP versions.
-        \Log::info('Cloudinary upload diagnostic', [
+        \Log::error('CLOUDINARY UPLOAD METHOD CALLED', [
             'file_valid' => $file->isValid(),
-            'file_error' => $file->getError(),
-            'file_error_message' => $file->getErrorMessage(),
-            'real_path' => $file->getRealPath(),
-            'path_exists' => file_exists($file->getRealPath()),
-            'path_readable' => is_readable($file->getRealPath()),
             'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-            'cloud_name' => $cloudName,
+            'mime' => $file->getMimeType(),
         ]);
 
-        $response = Http::timeout(60)
-            ->attach(
-                'file',
-                fopen($file->getRealPath(), 'r'),
-                $file->getClientOriginalName()
-            )
-            ->post(
-                "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
-                array_merge($params, [
-                    'api_key' => $apiKey,
-                    'signature' => $signature,
-                ])
-            );
+        try {
+            $response = Http::timeout(60)
+                ->attach(
+                    'file',
+                    fopen($file->getRealPath(), 'r'),
+                    $file->getClientOriginalName()
+                )
+                ->post(
+                    "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
+                    array_merge($params, [
+                        'api_key' => $apiKey,
+                        'signature' => $signature,
+                    ])
+                );
+        } catch (\Throwable $e) {
+            \Log::error('CLOUDINARY HTTP EXCEPTION', [
+                'message' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
 
-        \Log::info('Cloudinary upload response', [
+            throw $e;
+        }
+
+        \Log::error('CLOUDINARY RESPONSE DEBUG', [
             'status' => $response->status(),
             'body' => $response->body(),
+            'successful' => $response->successful(),
         ]);
 
         if ($response->failed()) {
