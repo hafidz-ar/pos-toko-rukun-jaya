@@ -98,15 +98,19 @@ class CloudinaryProductPhotoTest extends TestCase
             'photo_public_id' => 'pos-toko/products/old_public_id',
         ]);
 
-        // Mock CloudinaryService to receive the old public_id for replacement/delete
+        // Mock CloudinaryService to upload the replacement before deleting the old image
         $this->mock(\App\Services\CloudinaryService::class, function (MockInterface $mock) use ($product) {
             $mock->shouldReceive('upload')
                 ->once()
-                ->with(\Mockery::type(UploadedFile::class), $product->photo_public_id)
+                ->with(\Mockery::type(UploadedFile::class))
                 ->andReturn([
                     'secure_url' => 'https://res.cloudinary.com/dummy/image/upload/v12345/pos-toko/products/new.png',
                     'public_id' => 'pos-toko/products/new_public_id',
                 ]);
+
+            $mock->shouldReceive('delete')
+                ->once()
+                ->with($product->photo_public_id);
         });
 
         Storage::fake('local');

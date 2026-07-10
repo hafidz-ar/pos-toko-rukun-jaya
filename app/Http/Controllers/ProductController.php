@@ -135,6 +135,18 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        error_log('PRODUCT UPDATE DEBUG: update reached');
+        error_log('PRODUCT UPDATE DEBUG: file keys = ' . implode(',', array_keys($request->allFiles())));
+        error_log('PRODUCT UPDATE DEBUG: has photo_file = ' . ($request->hasFile('photo_file') ? 'true' : 'false'));
+
+        if ($request->hasFile('photo_file')) {
+            $file = $request->file('photo_file');
+
+            error_log('PRODUCT UPDATE DEBUG: photo_file valid = ' . ($file->isValid() ? 'true' : 'false'));
+            error_log('PRODUCT UPDATE DEBUG: photo_file error = ' . $file->getError());
+            error_log('PRODUCT UPDATE DEBUG: photo_file size = ' . $file->getSize());
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:products,name,' . $product->id . ',id,is_active,1',
             'category_id' => 'required|exists:categories,id',
@@ -182,13 +194,19 @@ class ProductController extends Controller
 
         $photoUrl = $product->photo_url;
         $photoPublicId = $product->photo_public_id;
+        $oldPhotoPublicId = null;
 
         if ($request->hasFile('photo_file')) {
             try {
-                $uploadResult = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'), $product->photo_public_id);
+                error_log('PRODUCT UPDATE DEBUG: calling CloudinaryService upload');
+
+                $uploadResult = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
                 $photoUrl = $uploadResult['secure_url'];
                 $photoPublicId = $uploadResult['public_id'];
-            } catch (\Exception $e) {
+                $oldPhotoPublicId = $product->photo_public_id;
+            } catch (\Throwable $e) {
+                error_log('PRODUCT UPDATE DEBUG: Cloudinary exception = ' . $e->getMessage());
+
                 return back()->withErrors(['photo_file' => $e->getMessage()]);
             }
         } elseif (array_key_exists('photo_url', $validated)) {
@@ -210,6 +228,10 @@ class ProductController extends Controller
             'photo_public_id' => $photoPublicId,
             'min_stock_threshold' => $validated['min_stock_threshold'] ?? $product->min_stock_threshold,
         ]);
+
+        if ($oldPhotoPublicId) {
+            app(\App\Services\CloudinaryService::class)->delete($oldPhotoPublicId);
+        }
 
         // Sync product units
         if (isset($validated['units'])) {

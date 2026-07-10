@@ -11,11 +11,10 @@ class CloudinaryService
      * Upload a file to Cloudinary and return the secure URL and public ID.
      *
      * @param  \Illuminate\Http\UploadedFile  $file
-     * @param  string|null  $oldPublicId
      * @return array
      * @throws \Exception
      */
-    public function upload(UploadedFile $file, ?string $oldPublicId = null): array
+    public function upload(UploadedFile $file): array
     {
         $cloudName = config('services.cloudinary.cloud_name');
         $apiKey = config('services.cloudinary.api_key');
@@ -23,11 +22,6 @@ class CloudinaryService
 
         if (!$cloudName || !$apiKey || !$apiSecret) {
             throw new \Exception("Konfigurasi Cloudinary belum lengkap di berkas .env. Pastikan CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, dan CLOUDINARY_API_SECRET sudah diisi.");
-        }
-
-        // Delete old photo if it exists
-        if ($oldPublicId) {
-            $this->delete($oldPublicId);
         }
 
         $timestamp = time();
