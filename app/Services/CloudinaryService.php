@@ -8,26 +8,34 @@ use Illuminate\Http\UploadedFile;
 class CloudinaryService
 {
     /**
-     * Upload a file to Cloudinary and return the secure URL.
+     * Upload a file to Cloudinary and return the secure URL and public ID.
      *
      * @param  \Illuminate\Http\UploadedFile  $file
-     * @return string
+     * @param  string|null  $oldPublicId
+     * @return array
      * @throws \Exception
      */
-    public function upload(UploadedFile $file): string
+    public function upload(UploadedFile $file, ?string $oldPublicId = null): array
     {
         $cloudName = config('services.cloudinary.cloud_name');
         $apiKey = config('services.cloudinary.api_key');
         $apiSecret = config('services.cloudinary.api_secret');
 
         if (!$cloudName || !$apiKey || !$apiSecret) {
-            // Fallback: If not configured, store locally or throw an error
             throw new \Exception("Konfigurasi Cloudinary belum lengkap di berkas .env. Pastikan CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, dan CLOUDINARY_API_SECRET sudah diisi.");
+        }
+
+        // Delete old photo if it exists
+        if ($oldPublicId) {
+            $this->delete($oldPublicId);
         }
 
         $timestamp = time();
         $params = [
             'timestamp' => $timestamp,
+            'folder' => 'pos-toko/products',
+            'transformation' => 'w_800,h_800,c_limit,q_auto,f_auto',
+            'overwrite' => 'true',
         ];
 
         // Sort parameters alphabetically
@@ -43,15 +51,17 @@ class CloudinaryService
         // Generate signature
         $signature = sha1($parameterString . $apiSecret);
 
+        // Build post parameters
+        $postParams = array_merge($params, [
+            'file' => fopen($file->getRealPath(), 'r'),
+            'api_key' => $apiKey,
+            'signature' => $signature,
+        ]);
+
         // Send multipart POST request to Cloudinary API
         $response = Http::asMultipart()->post(
             "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload",
-            [
-                'file' => fopen($file->getRealPath(), 'r'),
-                'api_key' => $apiKey,
-                'timestamp' => $timestamp,
-                'signature' => $signature,
-            ]
+            $postParams
         );
 
         if ($response->failed()) {
@@ -59,6 +69,60 @@ class CloudinaryService
             throw new \Exception("Gagal mengunggah foto ke Cloudinary: " . $errorMsg);
         }
 
-        return $response->json('secure_url');
+        return [
+            'secure_url' => $response->json('secure_url'),
+            'public_id' => $response->json('public_id'),
+        ];
+    }
+
+    /**
+     * Delete an image from Cloudinary by its public ID.
+     *
+     * @param  string  $publicId
+     * @return void
+     */
+    public function delete(string $publicId): void
+    {
+        $cloudName = config('services.cloudinary.cloud_name');
+        $apiKey = config('services.cloudinary.api_key');
+        $apiSecret = config('services.cloudinary.api_secret');
+
+        if (!$cloudName || !$apiKey || !$apiSecret) {
+            return;
+        }
+
+        $timestamp = time();
+        $params = [
+            'public_id' => $publicId,
+            'timestamp' => $timestamp,
+        ];
+
+        ksort($params);
+
+        $parameterString = '';
+        foreach ($params as $key => $value) {
+            $parameterString .= $key . '=' . $value . '&';
+        }
+        $parameterString = rtrim($parameterString, '&');
+
+        $signature = sha1($parameterString . $apiSecret);
+
+        try {
+            $response = Http::asMultipart()->post(
+                "https://api.cloudinary.com/v1_1/{$cloudName}/image/destroy",
+                [
+                    'public_id' => $publicId,
+                    'api_key' => $apiKey,
+                    'timestamp' => $timestamp,
+                    'signature' => $signature,
+                ]
+            );
+
+            if ($response->failed()) {
+                \Log::warning("Gagal menghapus foto dari Cloudinary (public_id: {$publicId}): " . ($response->json('error.message') ?? 'Terjadi kesalahan tidak dikenal.'));
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Exception saat menghapus foto dari Cloudinary: " . $e->getMessage());
+        }
     }
 }

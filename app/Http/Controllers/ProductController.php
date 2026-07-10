@@ -51,7 +51,7 @@ class ProductController extends Controller
             'stock_qty_base_unit' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'photo_url' => 'nullable|url|max:500',
-            'photo_file' => 'nullable|image|max:5120', // Max 5MB
+            'photo_file' => 'nullable|image|mimes:jpeg,png,webp|max:5120', // Max 5MB
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
             'units.*.unit_id' => 'required_with:units|exists:units,id',
@@ -89,10 +89,13 @@ class ProductController extends Controller
         }
 
         $photoUrl = $validated['photo_url'] ?? null;
+        $photoPublicId = null;
 
         if ($request->hasFile('photo_file')) {
             try {
-                $photoUrl = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
+                $uploadResult = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
+                $photoUrl = $uploadResult['secure_url'];
+                $photoPublicId = $uploadResult['public_id'];
             } catch (\Exception $e) {
                 return back()->withErrors(['photo_file' => $e->getMessage()]);
             }
@@ -107,6 +110,7 @@ class ProductController extends Controller
             'stock_qty_base_unit' => $validated['stock_qty_base_unit'] ?? 0,
             'location' => $validated['location'] ?? null,
             'photo_url' => $photoUrl,
+            'photo_public_id' => $photoPublicId,
             'min_stock_threshold' => $validated['min_stock_threshold'] ?? 10,
         ]);
 
@@ -138,7 +142,7 @@ class ProductController extends Controller
             'selling_price_per_base_unit' => 'required|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'photo_url' => 'nullable|url|max:500',
-            'photo_file' => 'nullable|image|max:5120', // Max 5MB
+            'photo_file' => 'nullable|image|mimes:jpeg,png,webp|max:5120', // Max 5MB
             'min_stock_threshold' => 'nullable|integer|min:0',
             'units' => 'nullable|array',
             'units.*.id' => 'nullable|integer',
@@ -177,14 +181,21 @@ class ProductController extends Controller
         }
 
         $photoUrl = $product->photo_url;
+        $photoPublicId = $product->photo_public_id;
 
         if ($request->hasFile('photo_file')) {
             try {
-                $photoUrl = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'));
+                $uploadResult = app(\App\Services\CloudinaryService::class)->upload($request->file('photo_file'), $product->photo_public_id);
+                $photoUrl = $uploadResult['secure_url'];
+                $photoPublicId = $uploadResult['public_id'];
             } catch (\Exception $e) {
                 return back()->withErrors(['photo_file' => $e->getMessage()]);
             }
         } elseif (array_key_exists('photo_url', $validated)) {
+            if ($validated['photo_url'] !== $product->photo_url && $product->photo_public_id) {
+                app(\App\Services\CloudinaryService::class)->delete($product->photo_public_id);
+                $photoPublicId = null;
+            }
             $photoUrl = $validated['photo_url'];
         }
 
@@ -196,6 +207,7 @@ class ProductController extends Controller
             'selling_price_per_base_unit' => $validated['selling_price_per_base_unit'],
             'location' => $validated['location'] ?? $product->location,
             'photo_url' => $photoUrl,
+            'photo_public_id' => $photoPublicId,
             'min_stock_threshold' => $validated['min_stock_threshold'] ?? $product->min_stock_threshold,
         ]);
 
@@ -231,7 +243,21 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        $product->update(['is_active' => false]);
+        // Delete photo from Cloudinary if it exists
+        if ($product->photo_public_id) {
+            try {
+                app(\App\Services\CloudinaryService::class)->delete($product->photo_public_id);
+            } catch (\Exception $e) {
+                // Silent fail — log only, do not block deactivation
+                \Log::warning("Failed to delete Cloudinary photo on product deactivation: " . $e->getMessage());
+            }
+        }
+
+        $product->update([
+            'is_active' => false,
+            'photo_url' => null,
+            'photo_public_id' => null,
+        ]);
 
         return back()->with('success', 'Produk berhasil dinonaktifkan.');
     }

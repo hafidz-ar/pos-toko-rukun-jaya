@@ -21,6 +21,7 @@ class Product extends Model
         'stock_qty_base_unit',
         'location',
         'photo_url',
+        'photo_public_id',
         'min_stock_threshold',
         'is_active',
     ];
