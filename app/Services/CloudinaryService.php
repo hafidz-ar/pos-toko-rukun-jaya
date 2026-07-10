@@ -46,12 +46,6 @@ class CloudinaryService
 
         // Use Http::attach() — the proper Laravel way to send multipart file uploads.
         // This avoids format inconsistencies across different Guzzle/PHP versions.
-        \Log::error('CLOUDINARY UPLOAD METHOD CALLED', [
-            'file_valid' => $file->isValid(),
-            'file_size' => $file->getSize(),
-            'mime' => $file->getMimeType(),
-        ]);
-
         try {
             $response = Http::timeout(60)
                 ->attach(
@@ -75,16 +69,17 @@ class CloudinaryService
             throw $e;
         }
 
-        \Log::error('CLOUDINARY RESPONSE DEBUG', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'successful' => $response->successful(),
-        ]);
-
         if ($response->failed()) {
             $errorMsg = $response->json('error.message')
-                ?? $response->body()
-                ?? 'Terjadi kesalahan tidak dikenal.';
+                ?? 'Unknown Cloudinary error';
+
+            \Log::error('Cloudinary upload gagal', [
+                'status' => $response->status(),
+                'message' => $errorMsg,
+                'file_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+            ]);
+
             throw new \Exception("Gagal mengunggah foto ke Cloudinary: " . $errorMsg);
         }
 
